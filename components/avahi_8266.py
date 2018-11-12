@@ -14,8 +14,8 @@ class ZeroConfSession(ApplicationSession):
         print("component created")
         self.zeroconf = Zeroconf()
         self.listener = self
-        self.browser  = ServiceBrowser(self.zeroconf, "_ws2812._udp.local.", self.listener)
-        self.register(self)
+        self.browser = ServiceBrowser(self.zeroconf, "_ws2812._udp.local.", self.listener)
+
 
     def onConnect(self):
         print("transport connected")
@@ -26,9 +26,13 @@ class ZeroConfSession(ApplicationSession):
 
     def onJoin(self, details):
         print("session joined")
+        self.register(self)
 
     def onLeave(self, details):
         print("session left")
+        self.browser.cancel()
+        self.zeroconf.close()
+        sys.exit(0)
 
     def onDisconnect(self):
         print("transport disconnected")
@@ -36,7 +40,6 @@ class ZeroConfSession(ApplicationSession):
     @wamp.register("com.lambentri.edge.zeroconf.8266")
     def get_list(self):
         return {"devices":self.current_items}
-
 
     def remove_service(self, zeroconf, type, name):
         print("Service %s removed" % (name,))
