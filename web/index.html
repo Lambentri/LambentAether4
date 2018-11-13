@@ -1,83 +1,175 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <link href='//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
-        <link href="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale==1, user-scalable=no, minimal-ui">
-    </head>
-    <body>
-        <div id="app">
-            <v-app id="inspire" dark>
-                <v-navigation-drawer v-model="drawer" clipped fixed app>
-                    <v-list dense>
-                        <v-list-tile @click="">
-                        <v-list-tile-action>
-                            <v-icon>dashboard</v-icon>
-                        </v-list-tile-action>
-                        <v-list-tile-content>
-                            <v-list-tile-title>Dashboard</v-list-tile-title>
-                        </v-list-tile-content>
-                        </v-list-tile>
-                        <v-list-tile @click="">
-                        <v-list-tile-action>
-                            <v-icon>settings</v-icon>
-                        </v-list-tile-action>
-                        <v-list-tile-content>
-                            <v-list-tile-title>Settings</v-list-tile-title>
-                        </v-list-tile-content>
-                        </v-list-tile>
-                    </v-list>
-                </v-navigation-drawer>
-                <v-toolbar app fixed clipped-left>
-                    <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-                    <v-toolbar-title>Application</v-toolbar-title>
-                </v-toolbar>
-                <v-content>
-                    <v-container fluid fill-height>
+  <head>
+    <link href='//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
+    <link href="//cdn.materialdesignicons.com/2.8.94/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale==1, user-scalable=no, minimal-ui">
+    <meta charset="utf-8"/>
+  </head>
+  <body>
+    <div id="app">
+      <v-app id="inspire" dark>
+        <v-navigation-drawer v-model="drawer" clipped fixed app>
+          <v-list dense>
+            <v-list-tile @click="activetab=0">
+              <v-list-tile-action>
+                <v-icon>dashboard</v-icon>
+              </v-list-tile-action>
+              <v-list-tile-content>
+                <v-list-tile-title>Dashboard</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+            <v-list-tile @click="activetab=1">
+              <v-list-tile-action>
+                <v-icon>devices</v-icon>
+              </v-list-tile-action>
+              <v-list-tile-content>
+                <v-list-tile-title>Devices</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+            <v-list-tile @click="activetab=2">
+              <v-list-tile-action>
+                <v-icon>settings</v-icon>
+              </v-list-tile-action>
+              <v-list-tile-content>
+                <v-list-tile-title>Settings</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+        </v-navigation-drawer>
+        <v-toolbar app fixed clipped-left>
+          <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+          <v-toolbar-title>Application</v-toolbar-title>
+        </v-toolbar>
+        <v-content>
+          <v-container fluid fill-height>
+            <v-tabs v-model="activetab" color="purple" dark slider-color="pink" fill-height>
+              <v-tab v-for="n in items" :key="n" ripple hidden>
+                {{ n }}
+              </v-tab>
+              <v-tab-item key="0" xs12 sm12 md12>
+                <v-card flat fill-height>
+                  <v-card-text>
+                    xxx
+                  </v-card-text>
+                </v-card>
+              </v-tab-item>
+              <v-tab-item key="1">
+                <v-card flat fill-height>
+                  <v-card-text>
+                    <h1>ESP8266 UDP Device List</h1>
+                    <v-container grid-list-sm fluid>
+                      <v-layout row wrap>
+                        <v-flex v-for="(value, key, index) in devices82667777.devices" :key="index" xs6 lg3>
+                          <v-card flat tile color="blue-grey darken-2">
+                            <v-card-title>
+                              <v-icon color="teal lighten-2">devices</v-icon> &emsp;
+                              {{ value.name.split('.')[0] }}
+                            </v-card-title>
+                            <v-card-text>
+                              <v-chip color="purple" text-color="white">
+                                <v-icon>alternate_email</v-icon>
+                                {{ value.address }}
 
-                    <v-tabs v-model="active" color="purple" dark slider-color="pink"
-                    >
-                    <v-tab
-                        v-for="n in 3"
-                        :key="n"
-                        ripple
-                    >
-                        Item {{ n }}
+                              </v-chip>
 
-                    </v-tab>
-                    <v-tab-item
-                        v-for="n in 3"
-                        :key="n"
-                    >
-                        <v-card flat>
-                        <v-card-text>{{ text }}</v-card-text>
-                        </v-card>
-                    </v-tab-item>
-                    </v-tabs>
+                              <!--{{ key }}xx {{ value }} {{ index }}-->
+                            </v-card-text>
+
+                          </v-card>
+                        </v-flex>
+                      </v-layout>
                     </v-container>
-                </v-content>
-                <v-footer app fixed>
-                <span>&copy; 2017</span>
-                </v-footer>
-            </v-app>
-        </div>
-        (right click and open in new tab)
-        <script src="//cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/vue-wamp@1.6.1/lib/vue-wamp.min.js"></script>
-        <script>
-            new Vue({ 
-                el: '#app',
-                data: {
-      
-                    tab: null,
-                    items: [
-                    'web', 'shopping', 'videos', 'images', 'news'
-                    ],
-                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
-      
+                  </v-card-text>
+                </v-card>
+              </v-tab-item>
+              <v-tab-item key="2" xs12 sm12 md12>
+                <v-card flat fill-height>
+                  <v-card-text>
+                    xxx
+                  </v-card-text>
+                </v-card>
+              </v-tab-item>
+            </v-tabs>
+          </v-container>
+        </v-content>
+        <v-footer app fixed>
+          <span>&copy; 2017</span>
+        </v-footer>
+      </v-app>
+    </div>
+    (right click and open in new tab)
+    <script src="//cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/vuex/2.3.1/vuex.min.js"></script>
+    <!--<script src="//cdn.jsdelivr.net/npm/vue-router@3.0.1/dist/vue-router.common.min.js"></script>-->
+    <script src="/js/autobahn.min.js"></script>
+    <script src="/js/vue.wamp.js"></script>
+    <script>
+        Vue.use(VueWamp, {
+            debug: true,
+            //    url: 'wss://the.thingcosm.us/ws',
+            url: 'ws://127.0.0.1:8080/ws',
+            // url: (document.location.origin == "file://") ? "ws://127.0.0.1:8080/ws" : (document.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws",
+            realm: 'realm1',
+            onopen: function onopen(session, details) {
+                console.log('WAMP connected', session, details);
+                session.subscribe('com.example.oncounter', function (args, kwargs, details) {
+                    // this.data.message = args[0];
+                    window.vueapp.$data.ticks = args[0];
+                }, {
+                    acknowledge: true // option needed for promise
+                }).then(function (s) {
+                    // console.log('AutobahnJS Subscription object: ', s);
+                });
+
+                window.servicetimer = setInterval(function () {
+                    session.call("com.lambentri.edge.zeroconf.8266").then(
+                        function (res) {
+                            window.vueapp.$data.devices82667777 = res
+                        },
+                        function (err) {
+                            console.log(err)
+                        }
+                    )
+                }, 3000);
+
+                function update_boxes() {
+                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
+                        function (res) {
+                            console.log("LITTLE BOXES");
+                            console.log(res);
+                            window.vueapp.$data.boxes = res.data
+                        },
+                        function (err) {
+                            console.log(err);
+                        }
+                    )
                 }
-            })
-        </script>
-   </body>
+
+                update_boxes()
+            },
+            onclose: function onclose(reason, details) {
+                console.log('WAMP closed: ' + reason, details);
+            }
+        });
+        var app = new Vue({
+            el: '#app',
+            data: {
+                devices82667777: {},
+                activetab: 0,
+                drawer: true,
+                tab: null,
+                items: [
+                    'Dashboard', 'Devices', 'Settings'
+                ],
+                text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+            }
+        })
+        window.vueapp = app;
+        Vue.Wamp.open();
+        console.log(Vue.Wamp.conn);
+    </script>
+  </body>
 </html>
