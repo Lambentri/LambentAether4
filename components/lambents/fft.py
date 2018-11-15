@@ -1,0 +1,1 @@
+# configurable via the dynamic configuration to connect to a standardized FFT pubsub topic
