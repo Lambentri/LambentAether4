@@ -1,7 +1,10 @@
+import os
 from enum import Enum
 
 import txaio
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from twisted.internet import task
+
 
 class TickEnum(Enum):
     HUNDREDTHS = .01
@@ -16,9 +19,18 @@ class TickEnum(Enum):
     THIRTHYS = 30
     MINS = 60
 
+class FakeMachine(object):
+    pass
+
+class SlowFakeMachine(FakeMachine):
+    speed = TickEnum.ONES
+
+class FastFakeMachine(FakeMachine):
+    speed = TickEnum.TENTHS
 
 class LambentMachine(ApplicationSession):
-    machines = {}
+    tickers = {}
+    machines = {"a.b": SlowFakeMachine(), "c.d":FastFakeMachine()}
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
@@ -31,6 +43,7 @@ class LambentMachine(ApplicationSession):
         # start the tick runner(s). There is one for each of the speeds
         # The tick runner will iterate through all machines and find machines set to the specific enum
         # and step them along ever X seconds
+        self._init_timers()
 
         # In all config cases, then check for machine instances to spin up and spin them out
 
@@ -40,6 +53,16 @@ class LambentMachine(ApplicationSession):
 
         # in the redis config mode, changes to machines are stored in redis for persistence automatically
         # in the file config mode, the persistence save calls are made by function call and (maybe have history?
+
+    def _init_timers(self):
+        for enum in TickEnum:
+            self.tickers[enum] = task.LoopingCall(self.do_tick, enum=enum)
+            self.tickers[enum].start(enum.value)
+
+    def do_tick(self, enum: TickEnum):
+        operating_machines = filter(lambda x:x.speed==enum, self.machines.values())
+        for mach in operating_machines:
+            print(mach.__class__)
 
     def change_machine_ticks(self, machine_name: str, machine_tick: TickEnum):
         pass  # changes the value of the tick enum on the machine
@@ -63,3 +86,10 @@ class LambentMachine(ApplicationSession):
     def list_active_machine_instances(self):
         # lists machines and the current config params
         pass
+
+
+if __name__ == '__main__':
+    url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8080/ws")
+    realm = u"realm1"
+    runner = ApplicationRunner(url, realm)
+    runner.run(LambentMachine)
