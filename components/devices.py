@@ -52,5 +52,9 @@ class DeviceConfig(object):
     """
 
 class SwitchConfig(DeviceConfig):
-    def __init__(self, values=[]):
+    title = "BPP On Device"
+    show_by_default = False
+    default_value = 3
+
+    def __init__(self, values=[], **kwargs):
         pass
