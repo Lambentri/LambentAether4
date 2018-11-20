@@ -87,6 +87,44 @@
               <v-tab-item key="2" xs12 sm12 md12>
                 <v-card flat fill-height>
                   <v-card-text>
+                    <h1>Lambent Machines</h1>
+                    <v-container grid-list-sm fluid>
+                      <v-layout row wrap>
+                        <v-flex v-for="(value, key) in machines" :key="key "xs8 lg4>
+                          {{ value }}
+                          <v-card flat tile color="blue-grey darken-2">
+                            <v-card-title>
+                              <v-icon color="teal lighten-2">devices</v-icon> &emsp;
+                              {{ value.name }}
+                            </v-card-title>
+                            <v-card-text>
+                              <v-btn-toggle>
+                                <v-btn flat value="left" v-on:click="tick_up(key)">
+                                  <span>Slower</span>
+                                  <v-icon>mdi-chevron-left</v-icon>
+                                </v-btn>
+                                <v-btn flat value="center">
+                                  <span>SPEED {{ machine_speeds[value.speed] }}</span>
+                                </v-btn>
+                                <v-btn flat value="right" v-on:click="tick_dn(key)">
+                                  <span>Faster</span>
+                                  <v-icon>mdi-chevron-right</v-icon>
+                                </v-btn>
+                              </v-btn-toggle>
+
+                              <!--{{ key }}xx {{ value }} {{ index }}-->
+                            </v-card-text>
+
+                          </v-card>
+                        </v-flex>
+                      </v-layout>
+                    </v-container>
+                  </v-card-text>
+                </v-card>
+              </v-tab-item>
+              <v-tab-item key="3" xs12 sm12 md12>
+                <v-card flat fill-height>
+                  <v-card-text>
                     xxx
                   </v-card-text>
                 </v-card>
@@ -125,7 +163,7 @@
                 });
 
                 window.servicetimer = setInterval(function () {
-                    session.call("com.lambentri.edge.zeroconf.8266").then(
+                    session.call("com.lambentri.edge.la4.zeroconf.8266").then(
                         function (res) {
                             window.vueapp.$data.devices82667777 = res
                         },
@@ -135,18 +173,31 @@
                     )
                 }, 3000);
 
-                function update_boxes() {
-                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
+                window.servicetimer = setInterval(function () {
+                    session.call("com.lambentri.edge.la4.machine.list").then(
                         function (res) {
-                            console.log("LITTLE BOXES");
-                            console.log(res);
-                            window.vueapp.$data.boxes = res.data
+                            console.log(res)
+                            window.vueapp.$data.machines = res.machines
+                            window.vueapp.$data.machine_speeds = res.speed_enum
                         },
                         function (err) {
-                            console.log(err);
+                            console.log(err)
                         }
                     )
-                }
+                }, 1500);
+
+//                function update_boxes() {
+//                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
+//                        function (res) {
+//                            console.log("LITTLE BOXES");
+//                            console.log(res);
+//                            window.vueapp.$data.boxes = res.data
+//                        },
+//                        function (err) {
+//                            console.log(err);
+//                        }
+//                    )
+//                }
 
                 update_boxes()
             },
@@ -157,16 +208,44 @@
         var app = new Vue({
             el: '#app',
             data: {
+                machines: {},
+                machine_speeds: {},
                 devices82667777: {},
                 activetab: 0,
                 drawer: true,
                 tab: null,
                 items: [
-                    'Dashboard', 'Devices', 'Settings'
+                    'Dashboard', 'Devices', 'Lambent Machines', 'Settings'
                 ],
                 text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+            },
+            methods: {
+            tick_up: function(key) {
+                console.log("up" + key)
+                Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_up", [], {"machine_name":key}).then(
+                    function (res) {
+                        console.log(res.speed)
+                    },
+                    function (err) {
+                        console.log(err)
+                    }
+                )
+            },
+            tick_dn: function (key) {
+                console.log("dn" +key)
+                Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_dn", [], {"machine_name":key}).then(
+                    function (res) {
+                        console.log(res)
+                    },
+                    function (err) {
+                        console.log(err)
+                    }
+                )
             }
+        }
         })
+
+
         window.vueapp = app;
         Vue.Wamp.open();
         console.log(Vue.Wamp.conn);

@@ -37,7 +37,7 @@ class ZeroConfSession(ApplicationSession):
     def onDisconnect(self):
         print("transport disconnected")
 
-    @wamp.register("com.lambentri.edge.zeroconf.8266")
+    @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
         return {"devices":self.current_items}
 

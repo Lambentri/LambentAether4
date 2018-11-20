@@ -1,3 +1,5 @@
+from enum import Enum
+
 from autobahn.twisted.wamp import ApplicationSession
 from twisted.internet.defer import inlineCallbacks
 import txredisapi as redis
@@ -43,6 +45,10 @@ class RedisConfig(ApplicationSession):
         pass # copy an existing one to create a permuatation
 
 
+class ConfigWidgetEnum(Enum):
+    SWITCH = "sw"
+    DROPDOWN = "dd"
+
 
 class DeviceConfig(object):
     """
@@ -55,6 +61,7 @@ class SwitchConfig(DeviceConfig):
     title = "BPP On Device"
     show_by_default = False
     default_value = 3
+    widget = ConfigWidgetEnum.SWITCH
 
     def __init__(self, values=[], **kwargs):
         pass
