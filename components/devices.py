@@ -41,3 +41,16 @@ class RedisConfig(ApplicationSession):
 
     def lambent_config_copy(self, name):
         pass # copy an existing one to create a permuatation
+
+
+
+class DeviceConfig(object):
+    """
+    A value that is configurable at runtime!
+     AND programatically generates simple vue interfaces defined via "vue components"
+     and referenced in the code in stackable meta class?
+    """
+
+class SwitchConfig(DeviceConfig):
+    def __init__(self, values=[]):
+        pass
