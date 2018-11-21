@@ -59,7 +59,6 @@ class MachineSerializer(Schema):
     name = fields.Str()
     speed = EnumField(TickEnum)
     running = EnumField(RunningEnum)
-    foo = fields.Str()
 
 class MachineDictSerializer(Schema):
     machines = ComposableDict(fields.Nested(MachineSerializer))
@@ -72,13 +71,11 @@ class SlowFakeMachine(FakeMachine):
     name = "SlowFake"
     speed = TickEnum.ONES
     running = RunningEnum.RUNNING
-    foo = "k"
 
 class FastFakeMachine(FakeMachine):
     name = "FastFake"
     speed = TickEnum.TENTHS
     running = RunningEnum.NOTRUNNING
-    foo = "l"
 
 class LambentMachine(ApplicationSession):
     tickers = {}
@@ -143,10 +140,14 @@ class LambentMachine(ApplicationSession):
         # this allows you to change execution parameters on a machine and restart it
         pass
 
-    @wamp.register("com.lambentri.edge.la4.machine.paus")
-    def pause_machine(self):
-        # sets machine to paused
-        pass
+    @wamp.register("com.lambentri.edge.la4.machine.pause")
+    def pause_machine(self, machine_name):
+        mach = self.machines.get(machine_name)
+        if mach.running == RunningEnum.RUNNING:
+            mach.running = RunningEnum.NOTRUNNING
+        else:
+            mach.running = RunningEnum.RUNNING
+        return {"running": mach.running.name}
 
     @wamp.register("com.lambentri.edge.la4.machine.rm")
     def destroy_machine(self):
@@ -159,8 +160,6 @@ class LambentMachine(ApplicationSession):
         # print(self.machines)
         serialized = schema.dump({"machines":self.machines, "speed_enum":{k:v.value for k,v in TickEnum.__members__.items()}})
         return serialized.data
-
-    @wamp.register("com.lambentri.edge.la4.machine.ticks")
 
     def onJoin(self, details):
         print("joined")
