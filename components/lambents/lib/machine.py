@@ -71,15 +71,29 @@ class SlowFakeMachine(FakeMachine):
     name = "SlowFake"
     speed = TickEnum.ONES
     running = RunningEnum.RUNNING
+    desc ="""
+A fake machine that just runs without doing anything in particular, slowly
+    """
+    grps = ["fake", "make"]
 
 class FastFakeMachine(FakeMachine):
     name = "FastFake"
     speed = TickEnum.TENTHS
     running = RunningEnum.NOTRUNNING
+    desc = """
+    A fake machine that just runs without doing anything in particular, faster
+    """
+
+    grps = ["fake", "bake"]
 
 class LambentMachine(ApplicationSession):
     tickers = {}
     machines = {"a.b": SlowFakeMachine(), "c.d":FastFakeMachine()}
+    machine_library = [
+        SlowFakeMachine,
+        FastFakeMachine,
+        "chasers.ImportedFFM"
+    ]
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
@@ -112,8 +126,8 @@ class LambentMachine(ApplicationSession):
         operating_machines = filter(lambda x:x.speed==enum, self.machines.values())
         for mach in operating_machines:
             pass
-            print(mach.__class__)
-            print(mach.running)
+            # print(mach.__class__)
+            # print(mach.running)
 
     def change_machine_ticks(self, machine_name: str, machine_tick: TickEnum):
         pass  # changes the value of the tick enum on the machine
@@ -130,10 +144,30 @@ class LambentMachine(ApplicationSession):
         mach.speed = mach.speed.next_dn(mach.speed)
         return {"speed":mach.speed.name}
 
+    @wamp.register("com.lambentri.edge.la4.machine.library")
+    def machine_library_retrieve(self):
+        machine_ret = {}
+        for item in self.machine_library:
+            if isinstance(item, str):
+                pass # import inplace and inspect to get k:v
+            elif issubclass(item, FakeMachine):
+                machine_ret[item.name] = {
+                    "desc": item.desc,
+                    "cls": item.__name__,
+                    "grp": item.grps
+                }
+            else:
+                print("unkown")
+                print(type(item))
+
+        return machine_ret
+
+
     @wamp.register("com.lambentri.edge.la4.machine.init")
     def init_machine_instance(self, machine_cls, machine_kwargs={}):
         # this is called on startup as well as when adding new configs
-        pass
+        for m in self.machine_library:
+            print(m.__class__)
 
     @wamp.register("com.lambentri.edge.la4.machine.edit")
     def modify_machine_instance(self):

@@ -1,205 +1,396 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <link href='//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
-    <link href="//cdn.materialdesignicons.com/2.8.94/css/materialdesignicons.min.css" rel="stylesheet">
-    <link href="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale==1, user-scalable=no, minimal-ui">
-    <meta charset="utf-8"/>
-  </head>
-  <body>
-    <div id="app">
-      <v-app id="inspire" dark>
-        <v-navigation-drawer v-model="drawer" clipped fixed app>
-          <v-list dense>
-            <v-list-tile @click="activetab=0">
-              <v-list-tile-action>
-                <v-icon>dashboard</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-content>
-                <v-list-tile-title>Dashboard</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <v-list-tile @click="activetab=1">
-              <v-list-tile-action>
-                <v-icon>devices</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-content>
-                <v-list-tile-title>Devices</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <v-list-tile @click="activetab=2">
-              <v-list-tile-action>
-                <v-icon>settings</v-icon>
-              </v-list-tile-action>
-              <v-list-tile-content>
-                <v-list-tile-title>Settings</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-          </v-list>
-        </v-navigation-drawer>
-        <v-toolbar app fixed clipped-left>
-          <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-          <v-toolbar-title>Application</v-toolbar-title>
-        </v-toolbar>
-        <v-content>
-          <v-container fluid fill-height>
-            <v-tabs v-model="activetab" color="purple" dark slider-color="pink" fill-height>
-              <v-tab v-for="n in items" :key="n" ripple hidden>
-                {{ n }}
-              </v-tab>
-              <v-tab-item key="0" xs12 sm12 md12>
-                <v-card flat fill-height>
-                  <v-card-text>
-                    xxx
-                  </v-card-text>
-                </v-card>
-              </v-tab-item>
-              <v-tab-item key="1">
-                <v-card flat fill-height>
-                  <v-card-text>
-                    <h1>ESP8266 UDP Device List</h1>
-                    <v-container grid-list-sm fluid>
-                      <v-layout row wrap>
-                        <v-flex v-for="(value, key, index) in devices82667777.devices" :key="index" xs6 lg3>
-                          <v-card flat tile color="blue-grey darken-2">
-                            <v-card-title>
-                              <v-icon color="teal lighten-2">devices</v-icon> &emsp;
-                              {{ value.name.split('.')[0] }}
-                            </v-card-title>
-                            <v-card-text>
-                              <v-chip color="purple" text-color="white">
-                                <v-icon>alternate_email</v-icon>
-                                {{ value.address }}
+    <head>
+        <link href='//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
+        <link href="//cdn.materialdesignicons.com/2.8.94/css/materialdesignicons.min.css" rel="stylesheet">
+        <link href="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, maximum-scale==1, user-scalable=no, minimal-ui">
+        <meta charset="utf-8"/>
+    </head>
+    <body>
+        <div id="app">
+            <v-app id="inspire" dark>
+                <v-navigation-drawer v-model="drawer" clipped fixed app>
+                    <v-list dense>
+                        <v-list-tile @click="activetab=0">
+                            <v-list-tile-action>
+                                <v-icon>dashboard</v-icon>
+                            </v-list-tile-action>
+                            <v-list-tile-content>
+                                <v-list-tile-title>Dashboard</v-list-tile-title>
+                            </v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile @click="activetab=1">
+                            <v-list-tile-action>
+                                <v-icon>devices</v-icon>
+                            </v-list-tile-action>
+                            <v-list-tile-content>
+                                <v-list-tile-title>Devices</v-list-tile-title>
+                            </v-list-tile-content>
+                        </v-list-tile>
+                        <v-list-tile @click="activetab=2">
+                            <v-list-tile-action>
+                                <v-icon>settings</v-icon>
+                            </v-list-tile-action>
+                            <v-list-tile-content>
+                                <v-list-tile-title>Settings</v-list-tile-title>
+                            </v-list-tile-content>
+                        </v-list-tile>
+                    </v-list>
+                </v-navigation-drawer>
+                <v-toolbar app fixed clipped-left>
+                    <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+                    <v-toolbar-title>Application</v-toolbar-title>
+                </v-toolbar>
+                <v-content>
+                    <v-container fluid fill-height>
+                        <v-tabs v-model="activetab" color="purple" dark slider-color="pink" fill-height>
+                            <v-tab v-for="n in items" :key="n" ripple hidden>
+                                {{ n }}
+                            </v-tab>
+                            <v-tab-item key="0" xs12 sm12 md12>
+                                <v-card flat fill-height>
+                                    <v-card-text>
+                                        xxx
+                                    </v-card-text>
+                                </v-card>
+                            </v-tab-item>
+                            <v-tab-item key="1">
+                                <v-card flat fill-height>
+                                    <v-card-text>
+                                        <h1>ESP8266 UDP Device List</h1>
+                                        <v-container grid-list-sm fluid>
+                                            <v-layout row wrap>
+                                                <v-flex v-for="(value, key, index) in devices82667777.devices"
+                                                        :key="index" xs6 lg3>
+                                                    <v-card flat tile color="blue-grey darken-2">
+                                                        <v-card-title>
+                                                            <v-icon color="teal lighten-2">devices</v-icon> &emsp;
+                                                            {{ value.name.split('.')[0] }}
+                                                        </v-card-title>
+                                                        <v-card-text>
+                                                            <v-chip color="purple" text-color="white">
+                                                                <v-icon>alternate_email</v-icon>
+                                                                {{ value.address }}
 
-                              </v-chip>
+                                                            </v-chip>
 
-                              <!--{{ key }}xx {{ value }} {{ index }}-->
-                            </v-card-text>
+                                                            <!--{{ key }}xx {{ value }} {{ index }}-->
+                                                        </v-card-text>
 
-                          </v-card>
-                        </v-flex>
-                      </v-layout>
+                                                    </v-card>
+                                                </v-flex>
+                                            </v-layout>
+                                        </v-container>
+                                    </v-card-text>
+                                </v-card>
+                            </v-tab-item>
+                            <v-tab-item key="2" xs12 sm12 md12 lg12>
+                                <v-card flat fill-height>
+                                    <v-card-text>
+                                        <h1>Lambent Machines</h1>
+                                        <v-btn absolute fab dark bottom right small color="primary"
+                                               v-on:click="machine_dialog_init = true">
+                                            <v-icon dark>add</v-icon>
+                                        </v-btn>
+                                        <v-btn absolute fab dark bottom left small color="purple"
+                                               v-on:click="machine_dialog_library = true">
+                                            <v-icon dark>widgets</v-icon>
+                                        </v-btn>
+
+
+                                        <v-container grid-list-sm fluid>
+                                            <v-layout row wrap>
+                                                <v-flex v-for="(value, key) in machines" :key="key " xs8 lg6>
+                                                    <v-card flat tile color="blue-grey darken-2">
+                                                        <v-card-title>
+                                                            <v-icon color="teal lighten-2">devices</v-icon> &emsp;
+                                                            {{ value.name }}
+                                                            <v-chip color="green" text-color="white"
+                                                                    v-if="value.running === 'RUNNING'" right
+                                                                    v-on:click="toggle_pause(key)">
+                                                                <v-avatar>
+                                                                    <v-icon>play_circle_outline</v-icon>
+                                                                </v-avatar>
+                                                                Running
+                                                            </v-chip>
+                                                            <v-chip color="red" text-color="white"
+                                                                    v-if="value.running === 'NOTRUNNING'" right
+                                                                    v-on:click="toggle_pause(key)">
+                                                                <v-avatar>
+                                                                    <v-icon>pause_circle_outline</v-icon>
+                                                                </v-avatar>
+                                                                Paused
+                                                            </v-chip>
+                                                        </v-card-title>
+                                                        <v-card-text>
+                                                            <v-btn-toggle>
+                                                                <v-btn flat value="left" v-on:click="tick_up(key)">
+                                                                    <span>Slower</span>
+                                                                    <v-icon>mdi-chevron-left</v-icon>
+                                                                </v-btn>
+                                                                <v-btn flat value="center">
+                                                                    <span>SPEED {{ machine_speeds[value.speed] }}</span>
+                                                                </v-btn>
+                                                                <v-btn flat value="right" v-on:click="tick_dn(key)">
+                                                                    <span>Faster</span>
+                                                                    <v-icon>mdi-chevron-right</v-icon>
+                                                                </v-btn>
+                                                            </v-btn-toggle>
+
+                                                            <!--{{ key }}xx {{ value }} {{ index }}-->
+                                                        </v-card-text>
+
+                                                    </v-card>
+                                                </v-flex>
+                                            </v-layout>
+                                        </v-container>
+                                    </v-card-text>
+                                </v-card>
+                            </v-tab-item>
+                            <v-tab-item key="3" xs12 sm12 md12>
+                                <v-card flat fill-height>
+                                    <v-card-text>
+                                        xxx
+                                    </v-card-text>
+                                </v-card>
+                            </v-tab-item>
+                        </v-tabs>
                     </v-container>
-                  </v-card-text>
-                </v-card>
-              </v-tab-item>
-              <v-tab-item key="2" xs12 sm12 md12 lg12>
-                <v-card flat fill-height>
-                  <v-card-text>
-                    <h1>Lambent Machines</h1>
-                    <v-btn absolute fab dark bottom right small color="primary">
-                      <v-icon dark>add</v-icon>
-                    </v-btn>
+                    <v-layout row justify-center> <!-- machine init dialog -->
+                        <v-dialog v-model="machine_dialog_init" fullscreen hide-overlay
+                                  transition="dialog-bottom-transition">
+                            <v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>
+                            <v-card>
+                                <v-toolbar dark color="primary">
+                                    <v-btn icon dark @click="machine_dialog_init = false">
+                                        <v-icon>close</v-icon>
+                                    </v-btn>
+                                    <v-toolbar-title>Machine Instance Init</v-toolbar-title>
+                                    <v-spacer></v-spacer>
+                                    <v-toolbar-items>
+                                        <v-btn dark flat @click="machine_dialog_init = false">Create</v-btn>
+                                    </v-toolbar-items>
+                                </v-toolbar>
+                                <v-list three-line subheader>
+                                    <v-subheader>Library</v-subheader>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Select Machine</v-list-tile-title>
+                                            <v-list-tile-sub-title>
+                                                <v-flex xs12 sm6 d-flex>
+                                                    <v-select
+                                                            v-model="machine_init_select"
+                                                            :items="machine_library_as_list"
+                                                            :hint="`${machine_init_select.cls}, ${machine_init_select.desc}`"
+                                                            label="Machines"
+                                                            item-text="cls"
+                                                            label="Select"
+                                                            persistent-hint
+                                                            return-object
+                                                            solo
+                                                    ></v-select>
+                                                </v-flex>
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Name The Machine</v-list-tile-title>
+                                            <v-list-tile-sub-title>
+                                                <v-flex xs12 sm6 md3>
+                                                    <v-text-field
+                                                            v-model="machine_init_name"
+                                                            append-icon="mdi-autorenew"
+                                                             @click:append="new_name"
+                                                            label="Solo"
+                                                            placeholder="Placeholder"
+                                                            solo
 
-                    <v-container grid-list-sm fluid>
-                      <v-layout row wrap>
-                        <v-flex v-for="(value, key) in machines" :key="key "xs8 lg6>
-                          <v-card flat tile color="blue-grey darken-2">
-                            <v-card-title>
-                              <v-icon color="teal lighten-2">devices</v-icon> &emsp;
-                              {{ value.name }}
-                              <v-chip color="green" text-color="white" v-if="value.running === 'RUNNING'" right v-on:click="toggle_pause(key)">
-                                <v-avatar>
-                                  <v-icon>play_circle_outline</v-icon>
-                                </v-avatar>
-                                Running
-                              </v-chip>
-                              <v-chip color="red" text-color="white" v-if="value.running === 'NOTRUNNING'" right v-on:click="toggle_pause(key)">
-                                <v-avatar>
-                                  <v-icon>pause_circle_outline</v-icon>
-                                </v-avatar>
-                                Paused
-                              </v-chip>
-                            </v-card-title>
-                            <v-card-text>
-                              <v-btn-toggle>
-                                <v-btn flat value="left" v-on:click="tick_up(key)">
-                                  <span>Slower</span>
-                                  <v-icon>mdi-chevron-left</v-icon>
-                                </v-btn>
-                                <v-btn flat value="center">
-                                  <span>SPEED {{ machine_speeds[value.speed] }}</span>
-                                </v-btn>
-                                <v-btn flat value="right" v-on:click="tick_dn(key)">
-                                  <span>Faster</span>
-                                  <v-icon>mdi-chevron-right</v-icon>
-                                </v-btn>
-                              </v-btn-toggle>
+                                                    ></v-text-field>
+                                                </v-flex>
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                </v-list>
+                                <v-divider></v-divider>
+                                <v-list three-line subheader>
+                                    <v-subheader>Machine Settings</v-subheader>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-action>
+                                            <v-checkbox></v-checkbox>
+                                        </v-list-tile-action>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Toggles</v-list-tile-title>
+                                            <v-list-tile-sub-title>Example of a Switch
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-action>
+                                            <v-autocomplete
+                                                    :items="['Skiing', 'Ice hockey', 'Soccer', 'Basketball', 'Hockey', 'Reading', 'Writing', 'Coding', 'Basejump']"
+                                                    label="Interests"
+                                            ></v-autocomplete>
+                                        </v-list-tile-action>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Selectors</v-list-tile-title>
+                                            <v-list-tile-sub-title>Select Single from a list
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-action>
+                                            <v-autocomplete
+                                                    :items="['Skiing', 'Ice hockey', 'Soccer', 'Basketball', 'Hockey', 'Reading', 'Writing', 'Coding', 'Basejump']"
+                                                    label="Interests"
+                                                    multiple
+                                            ></v-autocomplete>
+                                        </v-list-tile-action>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Multi Select</v-list-tile-title>
+                                            <v-list-tile-sub-title>Multiple Settings
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-action>
+                                            <v-text-field
+                                                    label="Key"
+                                                    placeholder="Value"
+                                            ></v-text-field>
+                                        </v-list-tile-action>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Key-Value</v-list-tile-title>
+                                            <v-list-tile-sub-title>One Per
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
 
-                              <!--{{ key }}xx {{ value }} {{ index }}-->
-                            </v-card-text>
+                                </v-list>
+                            </v-card>
+                        </v-dialog>
+                    </v-layout>
+                    <v-layout row justify-center> <!-- Machine library dialog -->
+                        <v-dialog v-model="machine_dialog_library" fullscreen hide-overlay
+                                  transition="dialog-bottom-transition">
+                            <v-btn slot="activator" color="secondary" dark>Open Dialog</v-btn>
+                            <v-card>
+                                <v-toolbar dark color="primary">
+                                    <v-btn icon dark @click="machine_dialog_library = false">
+                                        <v-icon>close</v-icon>
+                                    </v-btn>
+                                    <v-toolbar-title>Machine Library</v-toolbar-title>
+                                    <v-spacer></v-spacer>
+                                    <v-toolbar-items>
+                                        <v-btn dark flat @click="machine_dialog_library = false">Save</v-btn>
+                                    </v-toolbar-items>
+                                </v-toolbar>
+                                <v-item-group>
+                                    <v-container grid-list-md>
+                                        <v-layout wrap>
+                                            <v-flex v-for="(n, key) in machine_library" :key="key" xs12 md3>
+                                                <v-item>
+                                                    <v-card
+                                                            slot-scope="{ active, toggle }"
+                                                            :color="active ? 'primary' : ''"
+                                                            class="d-flex align-center"
+                                                            light
+                                                            height="200"
+                                                            @click="alert(k)"
+                                                    >
+                                                        <v-card-title primary-title>
+                                                            <div>
+                                                                <h3 class="headline mb-0">{{key}}</h3>
+                                                                <div>{{ n.desc }}</div>
+                                                                <div>
+                                                                    <v-chip v-for="item in n.grp" outline
+                                                                            color="secondary">{{item}}
+                                                                    </v-chip>
+                                                                    .
+                                                                </div>
+                                                            </div>
+                                                        </v-card-title>
+                                                        <v-card-actions>
+                                                            <v-btn flat color="orange">New</v-btn>
+                                                        </v-card-actions>
+                                                    </v-card>
+                                                </v-item>
+                                            </v-flex>
+                                        </v-layout>
+                                    </v-container>
+                                </v-item-group>
+                                <v-divider></v-divider>
 
-                          </v-card>
-                        </v-flex>
-                      </v-layout>
-                    </v-container>
-                  </v-card-text>
-                </v-card>
-              </v-tab-item>
-              <v-tab-item key="3" xs12 sm12 md12>
-                <v-card flat fill-height>
-                  <v-card-text>
-                    xxx
-                  </v-card-text>
-                </v-card>
-              </v-tab-item>
-            </v-tabs>
-          </v-container>
-        </v-content>
-        <v-footer app fixed>
-          <span>&copy; 2017</span>
-        </v-footer>
-      </v-app>
-    </div>
-    (right click and open in new tab)
-    <script src="//cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/vuex/2.3.1/vuex.min.js"></script>
-    <!--<script src="//cdn.jsdelivr.net/npm/vue-router@3.0.1/dist/vue-router.common.min.js"></script>-->
-    <script src="/js/autobahn.min.js"></script>
-    <script src="/js/vue.wamp.js"></script>
-    <script>
-        Vue.use(VueWamp, {
-            debug: true,
-            //    url: 'wss://the.thingcosm.us/ws',
-            url: 'ws://127.0.0.1:8080/ws',
-            // url: (document.location.origin == "file://") ? "ws://127.0.0.1:8080/ws" : (document.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws",
-            realm: 'realm1',
-            onopen: function onopen(session, details) {
-                console.log('WAMP connected', session, details);
-                session.subscribe('com.example.oncounter', function (args, kwargs, details) {
-                    // this.data.message = args[0];
-                    window.vueapp.$data.ticks = args[0];
-                }, {
-                    acknowledge: true // option needed for promise
-                }).then(function (s) {
-                    // console.log('AutobahnJS Subscription object: ', s);
-                });
+                            </v-card>
+                        </v-dialog>
+                    </v-layout>
+                </v-content>
+                <v-footer app fixed>
+                    <span>&copy; $YEAR</span>
+                </v-footer>
+            </v-app>
+        </div>
+        (right click and open in new tab)
+        <script src="//cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+        <script src="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/vuex/2.3.1/vuex.min.js"></script>
+        <!--<script src="//cdn.jsdelivr.net/npm/vue-router@3.0.1/dist/vue-router.common.min.js"></script>-->
+        <script src="/js/autobahn.min.js"></script>
+        <script src="/js/vue.wamp.js"></script>
+        <script>
+            Vue.use(VueWamp, {
+                debug: true,
+                //    url: 'wss://the.thingcosm.us/ws',
+                url: 'ws://127.0.0.1:8080/ws',
+                // url: (document.location.origin == "file://") ? "ws://127.0.0.1:8080/ws" : (document.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws",
+                realm: 'realm1',
+                onopen: function onopen(session, details) {
+                    console.log('WAMP connected', session, details);
+                    session.subscribe('com.example.oncounter', function (args, kwargs, details) {
+                        // this.data.message = args[0];
+                        window.vueapp.$data.ticks = args[0];
+                    }, {
+                        acknowledge: true // option needed for promise
+                    }).then(function (s) {
+                        // console.log('AutobahnJS Subscription object: ', s);
+                    });
 
-                window.servicetimer = setInterval(function () {
-                    session.call("com.lambentri.edge.la4.zeroconf.8266").then(
-                        function (res) {
-                            window.vueapp.$data.devices82667777 = res
-                        },
-                        function (err) {
-                            console.log(err)
-                        }
-                    )
-                }, 3000);
+                    window.servicetimer = setInterval(function () {
+                        session.call("com.lambentri.edge.la4.zeroconf.8266").then(
+                            function (res) {
+                                window.vueapp.$data.devices82667777 = res
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                    }, 3000);
 
-                window.servicetimer = setInterval(function () {
-                    session.call("com.lambentri.edge.la4.machine.list").then(
-                        function (res) {
-                            console.log(res)
-                            window.vueapp.$data.machines = res.machines
-                            window.vueapp.$data.machine_speeds = res.speed_enum
-                        },
-                        function (err) {
-                            console.log(err)
-                        }
-                    )
-                }, 1500);
+                    window.servicetimer = setInterval(function () {
+                        session.call("com.lambentri.edge.la4.machine.list").then(
+                            function (res) {
+                                console.log(res)
+                                window.vueapp.$data.machines = res.machines
+                                window.vueapp.$data.machine_speeds = res.speed_enum
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                    }, 1500);
+
+                    window.servicetimer = setInterval(function () {
+                        session.call("com.lambentri.edge.la4.machine.library").then(
+                            function (res) {
+                                window.vueapp.$data.machine_library = res
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                    }, 5000);
 
 //                function update_boxes() {
 //                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
@@ -214,67 +405,88 @@
 //                    )
 //                }
 
-                update_boxes()
-            },
-            onclose: function onclose(reason, details) {
-                console.log('WAMP closed: ' + reason, details);
-            }
-        });
-        var app = new Vue({
-            el: '#app',
-            data: {
-                machines: {},
-                machine_speeds: {},
-                devices82667777: {},
-                activetab: 0,
-                drawer: true,
-                tab: null,
-                items: [
-                    'Dashboard', 'Devices', 'Lambent Machines', 'Settings'
-                ],
-                text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
-            },
-            methods: {
-            tick_up: function(key) {
-                console.log("up" + key)
-                Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_up", [], {"machine_name":key}).then(
-                    function (res) {
-                        console.log(res.speed)
+                    update_boxes()
+                },
+                onclose: function onclose(reason, details) {
+                    console.log('WAMP closed: ' + reason, details);
+                }
+            });
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    machine_dialog_init: false,
+                    machine_dialog_library: false,
+                    machines: {},
+                    machine_speeds: {},
+                    machine_library: {},
+                    machine_init_select: {},
+                    machine_init_name: "",
+                    devices82667777: {},
+                    activetab: 0,
+                    drawer: true,
+                    tab: null,
+                    items: [
+                        'Dashboard', 'Devices', 'Lambent Machines', 'Settings'
+                    ],
+                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+                },
+                methods: {
+                    tick_up: function (key) {
+                        console.log("up" + key)
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_up", [], {"machine_name": key}).then(
+                            function (res) {
+                                console.log(res.speed)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     },
-                    function (err) {
-                        console.log(err)
-                    }
-                )
-            },
-            tick_dn: function (key) {
-                console.log("dn" +key)
-                Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_dn", [], {"machine_name":key}).then(
-                    function (res) {
-                        console.log(res)
+                    tick_dn: function (key) {
+                        console.log("dn" + key)
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_dn", [], {"machine_name": key}).then(
+                            function (res) {
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     },
-                    function (err) {
-                        console.log(err)
-                    }
-                )
-            },
-            toggle_pause: function (key) {
-                console.log("paus" + key)
-                Vue.Wamp.call("com.lambentri.edge.la4.machine.pause", [], {"machine_name":key}).then(
-                    function (res) {
-                        console.log(res)
+                    toggle_pause: function (key) {
+                        console.log("paus" + key)
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.pause", [], {"machine_name": key}).then(
+                            function (res) {
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     },
-                    function (err) {
-                        console.log(err)
+                    new_name: function () {
+                        console.log("New Name")
+                        Vue.Wamp.call("com.lambentri.edge.la4.helpers.namegen").then(
+                            function (res) {
+                                window.vueapp.$data.machine_init_name = res.name
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     }
-                )
-            }
-        }
-        })
+                },
+                computed: {
+                    machine_library_as_list: function () {
+                        return Object.values(this.machine_library)
+                    }
+                }
+            })
 
 
-        window.vueapp = app;
-        Vue.Wamp.open();
-        console.log(Vue.Wamp.conn);
-    </script>
-  </body>
+            window.vueapp = app;
+            Vue.Wamp.open();
+            console.log(Vue.Wamp.conn);
+        </script>
+    </body>
 </html>
