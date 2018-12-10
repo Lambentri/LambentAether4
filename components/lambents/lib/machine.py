@@ -1,3 +1,6 @@
+import importlib
+import pydoc
+
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn import wamp
 from enum import Enum
@@ -92,7 +95,7 @@ class LambentMachine(ApplicationSession):
     machine_library = [
         SlowFakeMachine,
         FastFakeMachine,
-        "chasers.ImportedFFM"
+        "lambents.chasers.ImportedFFM"
     ]
 
     def __init__(self, config=None):
@@ -149,6 +152,16 @@ class LambentMachine(ApplicationSession):
         machine_ret = {}
         for item in self.machine_library:
             if isinstance(item, str):
+                print(item)
+                try:
+                    mod = pydoc.locate("components." + item)
+                    machine_ret[mod.name] = {
+                        "desc": mod.desc,
+                        "cls": mod.__name__,
+                        "grp": mod.grps
+                    }
+                except:
+                    raise
                 pass # import inplace and inspect to get k:v
             elif issubclass(item, FakeMachine):
                 machine_ret[item.name] = {
