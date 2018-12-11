@@ -7,3 +7,6 @@ class ImportedFFM(FakeMachine):
     name = "SlowestFake"
     speed = TickEnum.HUNDREDTHS
     running = RunningEnum.RUNNING
+
+    class meta:
+        config = {}

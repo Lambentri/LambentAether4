@@ -95,7 +95,7 @@ class LambentMachine(ApplicationSession):
     machine_library = [
         SlowFakeMachine,
         FastFakeMachine,
-        "lambents.chasers.ImportedFFM"
+        "lambents.solids.SolidStep"
     ]
 
     def __init__(self, config=None):
@@ -158,7 +158,8 @@ class LambentMachine(ApplicationSession):
                     machine_ret[mod.name] = {
                         "desc": mod.desc,
                         "cls": mod.__name__,
-                        "grp": mod.grps
+                        "grp": mod.grps,
+                        "conf": mod.get_config()
                     }
                 except:
                     raise
@@ -167,7 +168,8 @@ class LambentMachine(ApplicationSession):
                 machine_ret[item.name] = {
                     "desc": item.desc,
                     "cls": item.__name__,
-                    "grp": item.grps
+                    "grp": item.grps,
+                    "conf": {}
                 }
             else:
                 print("unkown")
