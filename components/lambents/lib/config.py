@@ -8,12 +8,14 @@ class ConfigClass:
 
 
 class TupleConfig(ConfigClass):
-    def __init__(self, count, of_type, min=None, max=None):
+    def __init__(self, count, of_type, min=None, max=None, default=None, titles=()):
         self.count = count
         self.of_type = of_type
 
         self.min = min
         self.max = max
+        self.default = default
+        self.field_titles = titles
 
     def validate(self, inputdata):
         if len(inputdata) > self.count:
@@ -39,10 +41,23 @@ class TupleConfig(ConfigClass):
 
         return inputdata
 
+    @property
+    def field_title_for_s(self):
+        if self.field_titles:
+            return self.field_titles
+        else:
+            return tuple(f"Field {i}" for i in range(self.count))
+
     def serialize(self): # something like this
         return {
             "field_cnt": self.count,
-            "field_validate": self.of_type.__name__
+            "field_type": self.of_type.__name__,
+            "field_titles": self.field_title_for_s,
+            "field_validation": {
+                "min": self.min,
+                "max": self.max
+            },
+            "field_default": self.default or []
         }
 
 

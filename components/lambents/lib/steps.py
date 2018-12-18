@@ -29,5 +29,6 @@ class DefaultStep(object):
                         config[k]['cls'] = v['cls'].serialize()
                 # some serialization step should occur here, likely check the each object for
                 # an instance type and grab a serializer embedded in each configClass
+                print(config)
                 return config
         return {}

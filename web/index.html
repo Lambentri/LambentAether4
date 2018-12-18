@@ -214,9 +214,37 @@
                                         </v-list-tile-content>
                                     </v-list-tile>
                                 </v-list>
+                                <!--{{ machine_init_select }}-->
                                 <v-divider></v-divider>
                                 <v-list three-line subheader>
                                     <v-subheader>Machine Settings</v-subheader>
+
+                                    <v-list-tile avatar v-for="configuration in machine_init_select.conf">
+                                        <v-list-tile-action>
+                                            <!--{{ configuration.comp === 'SliderComponent' }}-->
+                                            <div v-if="configuration.comp === 'SliderComponent'">
+                                                <v-layout row wrap v-for="(title, index) in configuration.cls.field_titles">
+                                                <v-slider
+                                                  v-model="index"
+                                                  thumb-label="always"
+                                                  :label="title"
+                                                  :max="configuration.cls.field_validation.max"
+                                                  :min="configuration.cls.field_validation.min"
+                                                ></v-slider>
+                                                    </v-layout>
+                                            </div>
+
+                                            <div v-else>
+                                                <v-checkbox></v-checkbox>
+                                            </div>
+                                        </v-list-tile-action>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>{{ configuration.title }}</v-list-tile-title>
+                                            <v-list-tile-sub-title>{{ configuration.desc }}
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+
                                     <v-list-tile avatar>
                                         <v-list-tile-action>
                                             <v-checkbox></v-checkbox>
@@ -414,7 +442,7 @@
             var app = new Vue({
                 el: '#app',
                 data: {
-                    machine_dialog_init: false,
+                    machine_dialog_init: true, //change me back
                     machine_dialog_library: false,
                     machines: {},
                     machine_speeds: {},

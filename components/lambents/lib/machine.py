@@ -95,7 +95,8 @@ class LambentMachine(ApplicationSession):
     machine_library = [
         SlowFakeMachine,
         FastFakeMachine,
-        "lambents.solids.SolidStep"
+        "lambents.solids.SolidStep",
+        "lambents.solids.SolidStepHSV"
     ]
 
     def __init__(self, config=None):
