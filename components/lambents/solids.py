@@ -14,41 +14,36 @@ class BaseState(object):  # moveme
 
 class SolidState(BaseState):
 
-    def __init__(self, colors):
-        self.colors = colors
+    def __init__(self, color):
+        self.colors = color
 
     @staticmethod
     def validate(config, params):
         color = config['color']['cls']
         cvars = color.validate(params.get('color'))
-        return {"colors": cvars}
+        return {"color": cvars}
 
     def do_step(self):
-        pass  # boop
+        pass  # boop-noop
 
     def read_rgb(self):
         return self.colors
 
 
-class SolidStateHSV(BaseState, HSVHelper):
-    def __init__(self, colors):
-        self.h, self.s, self.v = colors
+class SolidStateHSV(HSVHelper, BaseState):
+    def __init__(self, color):
+        # print(color)
+        self.h, self.s, self.v = color
 
     @staticmethod
     def validate(config, params):
+        print(config)
         color = config['color']['cls']
         cvars = color.validate(params.get('color'))
-        return {"colors": cvars}
+        return {"color": cvars}
 
     def do_step(self):
-        pass  # boop
-
-    def convert_hsv(self): #make this a mixin again
-        c = self.colors
-
-
-    def read_rgb(self):
-        return self.convert_hsv()
+        pass  # boop-noop
 
 
 class SolidStep(DefaultStep):
@@ -62,7 +57,7 @@ class SolidStep(DefaultStep):
         state = SolidState
         config = {
             "color": {
-                "cls": TupleConfig(count=3, of_type=int, min=0, max=255, default=(0,102,202), titles=("R","G","B")),
+                "cls": TupleConfig(count=3, of_type=int, min=0, max=255, default=(2,102,202), titles=("R","G","B")),
                 "title": "Color",
                 "desc": "Colors that come out of the machine (rgb)",
                 "comp": "SliderComponent"
@@ -87,7 +82,7 @@ class SolidStepHSV(DefaultStep):
         state = SolidStateHSV
         config = {
             "color": {
-                "cls": TupleConfig(count=3, of_type=int, min=0, max=255, default=(0,102,202)),
+                "cls": TupleConfig(count=3, of_type=int, min=0, max=255, default=(245,10,60)),
                 "title": "Color",
                 "desc": "Colors that come out of the machine (hsv)",
                 "comp": "SliderComponent"

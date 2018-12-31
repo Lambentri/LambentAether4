@@ -170,7 +170,7 @@
                                     <v-toolbar-title>Machine Instance Init</v-toolbar-title>
                                     <v-spacer></v-spacer>
                                     <v-toolbar-items>
-                                        <v-btn dark flat @click="machine_dialog_init = false">Create</v-btn>
+                                        <v-btn dark flat @click="mach_init()">Create</v-btn>
                                     </v-toolbar-items>
                                 </v-toolbar>
                                 <v-list three-line subheader>
@@ -219,17 +219,18 @@
                                 <v-list three-line subheader>
                                     <v-subheader>Machine Settings</v-subheader>
 
-                                    <v-list-tile avatar v-for="configuration in machine_init_select.conf">
+                                    <v-list-tile avatar v-for="(configuration, key) in machine_init_select.conf">
                                         <v-list-tile-action>
                                             <!--{{ configuration.comp === 'SliderComponent' }}-->
                                             <div v-if="configuration.comp === 'SliderComponent'">
                                                 <v-layout row wrap v-for="(title, index) in configuration.cls.field_titles">
                                                 <v-slider
-                                                  v-model="index"
+                                                  v-model="curr_config[key+'-'+index]"
                                                   thumb-label="always"
                                                   :label="title"
                                                   :max="configuration.cls.field_validation.max"
                                                   :min="configuration.cls.field_validation.min"
+                                                  :value="configuration.cls.field_default[index]"
                                                 ></v-slider>
                                                     </v-layout>
                                             </div>
@@ -243,6 +244,7 @@
                                             <v-list-tile-sub-title>{{ configuration.desc }}
                                             </v-list-tile-sub-title>
                                         </v-list-tile-content>
+                                        <v-divider></v-divider>
                                     </v-list-tile>
 
                                     <v-list-tile avatar>
@@ -418,7 +420,7 @@
                                 console.log(err)
                             }
                         )
-                    }, 5000);
+                    }, 1500);
 
 //                function update_boxes() {
 //                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
@@ -456,7 +458,8 @@
                     items: [
                         'Dashboard', 'Devices', 'Lambent Machines', 'Settings'
                     ],
-                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
+                    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+                    curr_config: {}
                 },
                 methods: {
                     tick_up: function (key) {
@@ -502,11 +505,44 @@
                                 console.log(err)
                             }
                         )
+                    },
+                    mach_init: function () {
+                        console.log()
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.init", [], {
+                            "machine_cls": this.machine_init_select.cls,
+                            "machine_name": this.machine_init_name,
+                            "machine_kwargs": this.curr_config,
+                        }).then(
+                            function (res) {
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                        // this.machine_dialog_init = false
                     }
                 },
                 computed: {
                     machine_library_as_list: function () {
                         return Object.values(this.machine_library)
+                    }
+                },
+                watch: {
+                    machine_init_select : function (newVal, oldVal) {
+                        this.curr_config = {}
+                        console.log(newVal)
+                        for (const key in newVal.conf) {
+                            console.log(key)
+                            console.log(newVal.conf[key])
+
+                            for (var i=0; i< newVal.conf[key].cls.field_default.length; i++) {// set default values
+                                this.curr_config[key + '-' + i] = newVal.conf[key].cls.field_default[i];
+                            }
+                        }
+                    },
+                    machine_dialog_init: function (newVal, oldVal) {
+                        this.new_name()
                     }
                 }
             })

@@ -50,6 +50,7 @@ class TupleConfig(ConfigClass):
 
     def serialize(self): # something like this
         return {
+            "name": "TupleConfig",
             "field_cnt": self.count,
             "field_type": self.of_type.__name__,
             "field_titles": self.field_title_for_s,
