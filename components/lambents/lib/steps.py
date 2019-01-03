@@ -17,7 +17,7 @@ class DefaultStep(object):
             state = led.read_rgb()
             new_buffer.extend(state)
 
-        print(new_buffer)
+        # print(new_buffer)
         return new_buffer
 
     @classmethod

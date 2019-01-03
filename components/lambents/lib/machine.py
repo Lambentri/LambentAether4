@@ -13,6 +13,8 @@ from twisted.internet import task
 
 
 # enums
+from twisted.internet.defer import inlineCallbacks
+
 
 class TickEnum(Enum):
     HUNDREDTHS = .01
@@ -143,16 +145,23 @@ class LambentMachine(ApplicationSession):
             self.tickers[enum] = task.LoopingCall(self.do_tick, enum=enum)
             self.tickers[enum].start(enum.value)
 
-    def do_tick(self, enum: TickEnum):
-        operating_machines = filter(lambda x: x.speed.value == enum.value, self.machines.values())
+        print("alll timers initd")
 
+    @inlineCallbacks
+    def do_tick(self, enum: TickEnum):
+        # print(self.machines.values())
+        operating_machines = filter(lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value, self.machines.values())
+        # print(operating_machines)
         for mach in operating_machines:
 
             res = mach.step()
-            print(res[0:50])
+            # print(mach.speed.value == TickEnum.TENS.value)
+            if mach.speed.value == TickEnum.TENS.value:
+                # print(res)
+                # yield self.publish(f"com.lambentri.edge.la4.machine.tick", )
+                yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
+            # print(res[0:12])
             pass
-            print(mach.__class__)
-            print(mach.running)
 
     def change_machine_ticks(self, machine_name: str, machine_tick: TickEnum):
         pass  # changes the value of the tick enum on the machine
@@ -163,9 +172,6 @@ class LambentMachine(ApplicationSession):
                 try:
                     mod = pydoc.locate("components." + item)
                     if mod.__name__ == name:
-                        print("MOD")
-                        print(mod.meta.config)
-                        print(mod.get_config(do_serialize=False))
                         return mod
                 except:
                     pass
@@ -218,6 +224,7 @@ class LambentMachine(ApplicationSession):
 
         return machine_ret
 
+    @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.machine.init")
     def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs={}):
         # this is called on startup as well as when adding new configs
@@ -235,8 +242,12 @@ class LambentMachine(ApplicationSession):
             if v['cls'].serialize()['name'] == "TupleConfig":
                 matching_config = [vi for ki,vi in machine_kwargs.items() if ki.startswith(k + "-")]
                 built_kwargs[k] = tuple(matching_config)
+        id = f"{cls.__name__}-x-{machine_name}"
+        self.machines[id] = cls(config_params=built_kwargs)
+        res = self.machines[id].step()
+        print(res)
+        yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
 
-        self.machines[f"{cls.__name__}-x-{machine_name}"] = cls(config_params=built_kwargs)
     @wamp.register("com.lambentri.edge.la4.machine.edit")
     def modify_machine_instance(self):
         # this allows you to change execution parameters on a machine and restart it
@@ -252,9 +263,16 @@ class LambentMachine(ApplicationSession):
         return {"running": mach.running.name}
 
     @wamp.register("com.lambentri.edge.la4.machine.rm")
-    def destroy_machine(self):
+    def destroy_machine(self, machine_name):
+        try:
+            del self.machines[machine_name]
+        except:
+            print(f"Someone attempted to delete a machine that doesn't exist : {machine_name}")
         # deletes machine (from live/redis instance)
-        pass
+        schema = MachineDictSerializer()
+        serialized = schema.dump(
+            {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
+        return serialized.data
 
     @wamp.register("com.lambentri.edge.la4.machine.list")
     def list_active_machine_instances(self):

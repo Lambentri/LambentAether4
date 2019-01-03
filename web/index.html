@@ -140,6 +140,10 @@
                                                             </v-btn-toggle>
 
                                                             <!--{{ key }}xx {{ value }} {{ index }}-->
+                                                            <v-btn absolute fab dark top right small color="danger"
+                                                                   v-on:click="mach_rm(key)">
+                                                                <v-icon dark>remove_circle</v-icon>
+                                                            </v-btn>
                                                         </v-card-text>
 
                                                     </v-card>
@@ -507,20 +511,32 @@
                         )
                     },
                     mach_init: function () {
-                        console.log()
+                        console.log("init")
                         Vue.Wamp.call("com.lambentri.edge.la4.machine.init", [], {
                             "machine_cls": this.machine_init_select.cls,
                             "machine_name": this.machine_init_name,
                             "machine_kwargs": this.curr_config,
                         }).then(
                             function (res) {
+                                // this.machine_dialog_init = false
                                 console.log(res)
                             },
                             function (err) {
                                 console.log(err)
                             }
                         )
-                        // this.machine_dialog_init = false
+                    },
+                    mach_rm: function(machine_id){
+                        console.log("rm")
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.rm", [], {"machine_name": machine_id}).then(
+                            function (res) {
+                                window.vueapp.$data.machines = res.machines
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     }
                 },
                 computed: {
