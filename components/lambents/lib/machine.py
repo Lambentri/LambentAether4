@@ -274,6 +274,7 @@ class LambentMachine(ApplicationSession):
             {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
         return serialized.data
 
+    # pass
     @wamp.register("com.lambentri.edge.la4.machine.list")
     def list_active_machine_instances(self):
         schema = MachineDictSerializer()
@@ -282,9 +283,46 @@ class LambentMachine(ApplicationSession):
             {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
         return serialized.data
 
+
+    # links
+    @wamp.register("com.lambentri.edge.la4.links.disable")
+    def disable_link(self):
+        pass
+
+    @wamp.register("com.lambentri.edge.la4.links.create")
+    def create_link(self, link_name, link_spec):
+        pass
+
+    @wamp.register("com.lambentri.edge.la4.links.toggle")
+    def toggle_link(self, link_name):
+        """Toggles a link on, will disable all others that are pointing to a given device"""
+        pass
+
+    @wamp.register("com.lambentri.edge.la4.links.disable")
+    def disable_link(self, link_name):
+        """Disables a link (more or less the same as toggling, but to turn off the lights?"""
+        pass
+
+    @wamp.register("com.lambentri.edge.la4.links.modify")
+    def modify_link(self, link_name, link_spec):
+        pass
+
+    @wamp.register("com.lambentri.edge.la4.links.destroy")
+    def destroy_link(self, link_name):
+        pass
+
+    @wamp.register("com.lambentri.edge.la4.manifold.create")
+    def manifold_create(self):
+        """Creates a manifold to route and combine various sources / links / devices via virtual manifolds"""
+        pass
+
     def onJoin(self, details):
         print("joined")
         self.register(self)
+
+    @wamp.register("com.lambentri.edge.la4.links.list")
+    def list_links(self):
+        pass
 
 
 if __name__ == '__main__':
