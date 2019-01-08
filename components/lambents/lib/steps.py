@@ -20,6 +20,9 @@ class DefaultStep(object):
         # print(new_buffer)
         return new_buffer
 
+    def set_id(self, id): # We do this after init in machine invocation to keep the __init__ clear
+        self.id = id
+
     @classmethod
     def get_config(self, do_serialize=True):
         """ returns a configuration dictionary if one exists """

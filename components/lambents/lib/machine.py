@@ -158,7 +158,10 @@ class LambentMachine(ApplicationSession):
             # print(mach.speed.value == TickEnum.TENS.value)
             if mach.speed.value == TickEnum.TENS.value:
                 # print(res)
-                # yield self.publish(f"com.lambentri.edge.la4.machine.tick", )
+                print(vars)
+                print(vars(mach))
+                yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res)
+                yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
                 yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
             # print(res[0:12])
             pass
@@ -243,7 +246,9 @@ class LambentMachine(ApplicationSession):
                 matching_config = [vi for ki,vi in machine_kwargs.items() if ki.startswith(k + "-")]
                 built_kwargs[k] = tuple(matching_config)
         id = f"{cls.__name__}-x-{machine_name}"
-        self.machines[id] = cls(config_params=built_kwargs)
+        mach = cls(config_params=built_kwargs)
+        mach.set_id(id)
+        self.machines[id] = mach
         res = self.machines[id].step()
         print(res)
         yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
@@ -285,32 +290,6 @@ class LambentMachine(ApplicationSession):
 
 
     # links
-    @wamp.register("com.lambentri.edge.la4.links.disable")
-    def disable_link(self):
-        pass
-
-    @wamp.register("com.lambentri.edge.la4.links.create")
-    def create_link(self, link_name, link_spec):
-        pass
-
-    @wamp.register("com.lambentri.edge.la4.links.toggle")
-    def toggle_link(self, link_name):
-        """Toggles a link on, will disable all others that are pointing to a given device"""
-        pass
-
-    @wamp.register("com.lambentri.edge.la4.links.disable")
-    def disable_link(self, link_name):
-        """Disables a link (more or less the same as toggling, but to turn off the lights?"""
-        pass
-
-    @wamp.register("com.lambentri.edge.la4.links.modify")
-    def modify_link(self, link_name, link_spec):
-        pass
-
-    @wamp.register("com.lambentri.edge.la4.links.destroy")
-    def destroy_link(self, link_name):
-        pass
-
     @wamp.register("com.lambentri.edge.la4.manifold.create")
     def manifold_create(self):
         """Creates a manifold to route and combine various sources / links / devices via virtual manifolds"""
