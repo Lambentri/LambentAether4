@@ -161,10 +161,14 @@
                                                v-on:click="link_library_dialog = true">
                                             <v-icon dark>widgets</v-icon>
                                         </v-btn>
+                                        <v-btn absolute fab dark bottom right small color="pink"
+                                               v-on:click="link_dialog = true">
+                                            <v-icon dark>add</v-icon>
+                                        </v-btn>
                                     </v-card-text>
                                 </v-card>
                             </v-tab-item>
-                            <v-tab-item key="3" xs12 sm12 md12>
+                            <v-tab-item key="4  " xs12 sm12 md12>
                                 <v-card flat fill-height>
                                     <v-card-text>
                                         xxx
@@ -370,7 +374,8 @@
 
                             </v-card>
                         </v-dialog>
-
+                    </v-layout>
+                    <v-layout row justify-center> <!-- Link library dialogs -->
                         <v-dialog v-model="link_library_dialog" fullscreen hide-overlay
                                   transition="dialog-bottom-transition">
                             <v-btn slot="activator" color="secondary" dark>Open Dialog</v-btn>
@@ -386,9 +391,9 @@
                                     </v-toolbar-items>
                                 </v-toolbar>
                                 <v-item-group>
-                                    <v-container grid-list-md v-for="(items, key) in link_library">
+                                    <v-container grid-list-md v-for="(items, key) in link_library" :key="key">
                                         <v-layout wrap>
-                                            <v-flex xs12 md3>
+                                            <v-flex xs12 md2>
                                                 <v-item>
                                                     <v-card
                                                             slot-scope="{ active, toggle }"
@@ -397,17 +402,17 @@
                                                             light
                                                             height="200"
                                                             @click="alert(k)"
+                                                            color="#26c6da"
                                                     >
                                                         <v-card-title primary-title>
                                                             <div>
-                                                                <h3 class="headline mb-0">{{ key }}</h3>
-                                                                <div>{{ items}}</div>
+                                                                <h1 class="headline mb-0" >{{ key }}</h1>
                                                             </div>
                                                         </v-card-title>
                                                     </v-card>
                                                 </v-item>
                                             </v-flex>
-                                            <v-flex v-for="(links, key2) in items" :key="key2" xs12 md3>
+                                            <v-flex v-for="(links, key2) in items" :key="key2" xs12 md2>
                                                 <v-item>
                                                     <v-card
                                                             slot-scope="{ active, toggle }"
@@ -418,8 +423,7 @@
                                                     >
                                                         <v-card-title primary-title>
                                                             <div>
-                                                                <h3 class="headline mb-0">{{key2}}</h3>
-                                                                <div>{{ links.id }}</div>
+                                                                <h3 class="headline mb-0">{{ links.id }}</h3>
                                                                 <div>{{ links.ttl }}</div>
                                                             </div>
                                                         </v-card-title>
@@ -434,6 +438,65 @@
                                 </v-item-group>
                                 <v-divider></v-divider>
 
+                            </v-card>
+                        </v-dialog>
+                        <v-dialog v-model="link_dialog" fullscreen hide-overlay
+                                  transition="dialog-bottom-transition">
+                            <v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>
+                            <v-card>
+                                <v-toolbar dark color="primary">
+                                    <v-btn icon dark @click="link_dialog = false">
+                                        <v-icon>close</v-icon>
+                                    </v-btn>
+                                    <v-toolbar-title>Link Editor</v-toolbar-title>
+                                    <v-spacer></v-spacer>
+                                    <v-toolbar-items>
+                                        <v-btn dark flat @click="link_save()">Save</v-btn>
+                                    </v-toolbar-items>
+                                </v-toolbar>
+                                <v-list three-line subheader>
+                                    <v-subheader>Source</v-subheader>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Select Link</v-list-tile-title>
+                                            <v-list-tile-sub-title>
+                                                <v-flex xs12 sm6 d-flex>
+                                                    <v-select
+                                                            v-model="machine_init_select"
+                                                            :items="machine_library_as_list"
+                                                            :hint="`${machine_init_select.cls}, ${machine_init_select.desc}`"
+                                                            label="Machines"
+                                                            item-text="cls"
+                                                            label="Select"
+                                                            persistent-hint
+                                                            return-object
+                                                            solo
+                                                    ></v-select>
+                                                </v-flex>
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                    <v-list-tile avatar>
+                                        <v-list-tile-content>
+                                            <v-list-tile-title>Name The Machine</v-list-tile-title>
+                                            <v-list-tile-sub-title>
+                                                <v-flex xs12 sm6 md3>
+                                                    <v-text-field
+                                                            v-model="machine_init_name"
+                                                            append-icon="mdi-autorenew"
+                                                             @click:append="new_name"
+                                                            label="Solo"
+                                                            placeholder="Placeholder"
+                                                            solo
+
+                                                    ></v-text-field>
+                                                </v-flex>
+                                            </v-list-tile-sub-title>
+                                        </v-list-tile-content>
+                                    </v-list-tile>
+                                </v-list>
+                                <!--{{ machine_init_select }}-->
+                                <v-divider></v-divider>
                             </v-card>
                         </v-dialog>
                     </v-layout>
@@ -468,7 +531,7 @@
                         // console.log('AutobahnJS Subscription object: ', s);
                     });
 
-                    session.subscribe("com.lambentri.edge.la4.links", function (args, kwargs,details) {
+                    session.subscribe("com.lambentri.edge.la4.links", function (args, kwargs, details) {
                         window.vueapp.$data.link_library = kwargs.links
                     }).then(function (s) {
                          console.log('AutobahnJS Subscription object: ', s);
@@ -509,17 +572,6 @@
                         )
                     }, 1500);
 
-                    window.servicetimer = setInterval(function () {
-                        session.call("com.lambentri.edge.la4.links").then(
-                            function (res) {
-                                window.vueapp.$data.link_library = res
-                            },
-                            function (err) {
-                                console.log(err)
-                            }
-                        )
-                    }, 1500);
-
 //                function update_boxes() {
 //                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
 //                        function (res) {
@@ -533,7 +585,7 @@
 //                    )
 //                }
 
-                    update_boxes()
+
                 },
                 onclose: function onclose(reason, details) {
                     console.log('WAMP closed: ' + reason, details);
