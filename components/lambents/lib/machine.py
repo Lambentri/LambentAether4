@@ -73,6 +73,8 @@ class MachineSerializer(Schema):
     name = fields.Str()
     speed = EnumField(TickEnum)
     running = EnumField(RunningEnum)
+    id = fields.Str()
+    desc = fields.Str()
 
 
 class MachineDictSerializer(Schema):
@@ -94,6 +96,7 @@ class SlowFakeMachine(FakeMachine):
 A fake machine that just runs without doing anything in particular, slowly
     """
     grps = ["fake", "make"]
+    id = "FakexFakeSlow"
 
 
 class FastFakeMachine(FakeMachine):
@@ -105,6 +108,7 @@ class FastFakeMachine(FakeMachine):
     """
 
     grps = ["fake", "bake"]
+    id = "FakeXFakeFast"
 
 
 class LambentMachine(ApplicationSession):

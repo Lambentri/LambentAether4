@@ -461,17 +461,32 @@
                                             <v-list-tile-title>Select Link</v-list-tile-title>
                                             <v-list-tile-sub-title>
                                                 <v-flex xs12 sm6 d-flex>
-                                                    <v-select
-                                                            v-model="machine_init_select"
-                                                            :items="machine_library_as_list"
-                                                            :hint="`${machine_init_select.cls}, ${machine_init_select.desc}`"
-                                                            label="Machines"
-                                                            item-text="cls"
+                                                    <v-combobox
+                                                            v-model="link_dialog_sel_src"
+                                                            :items="machines_as_list"
+                                                            :hint="`${link_dialog_sel_src.name}, ${link_dialog_sel_src.desc}`"
+                                                            label="Sources"
+                                                            item-text="id"
                                                             label="Select"
                                                             persistent-hint
                                                             return-object
                                                             solo
-                                                    ></v-select>
+                                                    ></v-combobox>
+                                                </v-flex>
+                                                <v-flex xs12 sm6 d-flex></v-flex>
+                                                <v-flex xs12 sm6 d-flex>
+                                                    <v-combobox
+                                                            v-model="link_dialog_sel_dest"
+                                                            :items="machines_as_list"
+                                                            :hint="`${link_dialog_sel_dest.name}, ${link_dialog_sel_dest.desc}`"
+                                                            label="Sinks"
+                                                            item-text="id"
+                                                            label="Select"
+                                                            persistent-hint
+                                                            return-object
+                                                            solo
+                                                    >
+                                                    </v-combobox>
                                                 </v-flex>
                                             </v-list-tile-sub-title>
                                         </v-list-tile-content>
@@ -697,7 +712,13 @@
                 computed: {
                     machine_library_as_list: function () {
                         return Object.values(this.machine_library)
+                    },
+
+                    machines_as_list: function () {
+                        return Object.values(this.machines)
                     }
+
+                    // todo add combined lambents/named sources and devices/named sinks
                 },
                 watch: {
                     machine_init_select : function (newVal, oldVal) {
