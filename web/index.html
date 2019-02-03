@@ -547,7 +547,8 @@
                     });
 
                     session.subscribe("com.lambentri.edge.la4.links", function (args, kwargs, details) {
-                        window.vueapp.$data.link_library = kwargs.links
+                        window.vueapp.$data.link_library = kwargs.links;
+                        window.vueapp.$data.sink_library = kwargs.sinks;
                     }).then(function (s) {
                          console.log('AutobahnJS Subscription object: ', s);
                     });
@@ -624,6 +625,8 @@
                     link_dialog_sel_dest: "",
                     link_dialog_sel_name: "",
                     link_selected_id: "",
+
+                    sink_library: {},
 
                     devices82667777: {},
                     activetab: 0,

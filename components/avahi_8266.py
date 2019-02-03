@@ -4,6 +4,8 @@ import struct
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp import SubscribeOptions
+from twisted.internet import task
+from twisted.internet.defer import inlineCallbacks
 from zeroconf import ServiceBrowser, Zeroconf
 import os
 import socket
@@ -16,6 +18,9 @@ class ZeroConfSession(ApplicationSession):
     current_items = {}
     subs = {}
     port = 7777
+
+    HERALD_TICKS = .5
+    HERALD_SRC = "8266-7777"
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
@@ -36,6 +41,9 @@ class ZeroConfSession(ApplicationSession):
         print("session joined")
         self.register(self)
 
+        self.ticker_herald = task.LoopingCall(self.device_herald)
+        self.ticker_herald.start(self.HERALD_TICKS)
+
     def onLeave(self, details):
         print("session left")
         self.browser.cancel()
@@ -45,10 +53,20 @@ class ZeroConfSession(ApplicationSession):
     def onDisconnect(self):
         print("transport disconnected")
 
+    @inlineCallbacks
+    def device_herald(self):
+        built = []
+        for k,v in self.current_items.items():
+            built.append({"name":v['name'], "id":f"com.lambentri.edge.la4.device.82667777.{k}"})
+        print(built)
+        yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", sinks=built)
+
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
         return {"devices": self.current_items}
 
+
+    # zeroconf methods
     def remove_service(self, zeroconf, type, name):
         print("Service %s removed" % (name,))
         del self.current_items[name]
@@ -63,6 +81,7 @@ class ZeroConfSession(ApplicationSession):
                                            options=SubscribeOptions(details_arg="details", correlation_id=name))
         print(self.subs)
 
+    # udp methods
     def udp_send(self, message, details):
         print(details)
         name = details.topic.rsplit('.', 1)[1]
@@ -73,7 +92,6 @@ class ZeroConfSession(ApplicationSession):
 
         structd = struct.pack('B' * len(values), *values)
         self.socket.sendto(structd, (self.current_items[name]['address'], self.port))
-        # self.socket.sendto()
 
 
 if __name__ == '__main__':

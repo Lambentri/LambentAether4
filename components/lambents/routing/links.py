@@ -10,10 +10,15 @@ from twisted.internet.defer import inlineCallbacks
 
 LINK_PREFIX = "com.lambentri.edge.la4.machine.link"
 LINK_PREFIX_ = f"{LINK_PREFIX}."
+SINK_PREFIX = "com.lambentri.edge.la4.machine.sink"
+SINK_PREFIX_ = f"{SINK_PREFIX}."
 
 class LinkManager(ApplicationSession):
     sources = {}
     sources_lseen = {}
+    sinks = {}
+    sinks_lseen = {}
+
     HERALD_TICKS = .5
 
     def __init__(self, config=None):
@@ -43,6 +48,12 @@ class LinkManager(ApplicationSession):
         print(src_class)
         print(src_topic)
 
+    @wamp.subscribe(SINK_PREFIX, options=SubscribeOptions(match="prefix", details_arg="details"))
+    def sink_noticer(self, res, details):
+        split_topic = details.topic.split(SINK_PREFIX_)[1]
+        print(split_topic)
+        print(res)
+
     def _how_long_to_repr(self, value):
         s = abs(value.seconds)
         hours, r_h = divmod(s, 3600)
@@ -60,7 +71,7 @@ class LinkManager(ApplicationSession):
             how_long_s = self._how_long_to_repr(how_long)
             built[src].append({"id":topic, "ttl":how_long_s})
 
-        yield self.publish("com.lambentri.edge.la4.links", links=built)
+        yield self.publish("com.lambentri.edge.la4.links", links=built, sinks={})
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
     def disable_link(self):
@@ -72,7 +83,7 @@ class LinkManager(ApplicationSession):
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name):
-        """Toggles a link on, will disable all others that are pointing to a given device"""
+        """Toggles a link on, will disable all others that are pointing to a given device / src"""
         pass
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
