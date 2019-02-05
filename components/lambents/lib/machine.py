@@ -207,16 +207,21 @@ class LambentMachine(ApplicationSession):
         for item in self.machine_library:
             if isinstance(item, str):
                 # print(item)
+                # TODO cache this
                 try:
-                    mod = pydoc.locate("components." + item)
+                    component_name = f"components.{item}"
+                    # print(component_name)
+                    mod = pydoc.locate(component_name)
                     machine_ret[mod.name] = {
                         "desc": mod.desc,
                         "cls": mod.__name__,
                         "grp": mod.grps,
                         "conf": mod.get_config()
                     }
-                except AttributeError:
+                except AttributeError as e:
+
                     print(f"Unable to find machine of class '{item}'")
+                    # print(e)
                 pass  # import inplace and inspect to get k:v
             elif issubclass(item, FakeMachine):
                 machine_ret[item.name] = {

@@ -5,6 +5,7 @@ import os
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn import wamp
 from autobahn.wamp.types import SubscribeOptions
+from copy import deepcopy
 from twisted.internet import task
 from twisted.internet.defer import inlineCallbacks
 
@@ -18,6 +19,7 @@ class LinkManager(ApplicationSession):
     sources_lseen = {}
     sinks = {}
     sinks_lseen = {}
+    links = {}
 
     HERALD_TICKS = .5
 
@@ -47,12 +49,39 @@ class LinkManager(ApplicationSession):
         # todo flush to redis
         print(src_class)
         print(src_topic)
+        print(split_topic)
 
     @wamp.subscribe(SINK_PREFIX, options=SubscribeOptions(match="prefix", details_arg="details"))
     def sink_noticer(self, res, details):
         split_topic = details.topic.split(SINK_PREFIX_)[1]
-        print(split_topic)
-        print(res)
+        # print("NOTICED!!")
+        # print(split_topic)
+        # print(res)
+        for sink_sub in res:
+
+            res_id = sink_sub.get('id')
+            res_iname = sink_sub.get('iname')
+            res_name = sink_sub.get('name')
+
+            if split_topic in self.sinks:
+                self.sinks[split_topic][res_id] = sink_sub
+            else:
+                self.sinks[split_topic] = {res_id: sink_sub}
+
+    @property
+    def computed_sinks(self):
+        sdict = deepcopy(self.sinks)
+        returnvals = []
+        for groupkey,objects in sdict.items():
+            for k,v in objects.items():
+                vname = v['name']
+                returnvals.append({
+                    "listname" : f"{groupkey}.{vname}",
+                    "grp": groupkey,
+                    **v
+                })
+
+        return returnvals
 
     def _how_long_to_repr(self, value):
         s = abs(value.seconds)
@@ -62,23 +91,27 @@ class LinkManager(ApplicationSession):
 
     @inlineCallbacks
     def link_herald(self):
-        built = {}
+        built = []
         for src, topic in self.sources.values():
-            if src not in built:
-                built[src] = []
+            # if src not in built:
+            #     built[src] = []
             last_seen = self.sources_lseen[f"{src}.{topic}"]
             how_long = datetime.datetime.now() - last_seen
             how_long_s = self._how_long_to_repr(how_long)
-            built[src].append({"id":topic, "ttl":how_long_s})
+            built.append({"listname":topic, "ttl":how_long_s, "id": f"{LINK_PREFIX}.{topic}", "cls": src})
 
-        yield self.publish("com.lambentri.edge.la4.links", links=built, sinks={})
+        yield self.publish("com.lambentri.edge.la4.links", links=built, sinks=self.computed_sinks)
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
     def disable_link(self):
         pass
 
-    @wamp.register("com.lambentri.edge.la4.links.create")
-    def create_link(self, link_name, link_spec):
+    @wamp.register("com.lambentri.edge.la4.links.save")
+    def save_link(self, link_name, link_spec):
+        """ Create, save, and modify. All in one!
+
+        We're going to be super lazy and assume the name engine won't collide too hard
+        """
         pass
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
@@ -89,10 +122,6 @@ class LinkManager(ApplicationSession):
     @wamp.register("com.lambentri.edge.la4.links.disable")
     def disable_link(self, link_name):
         """Disables a link (more or less the same as toggling, but to turn off the lights?"""
-        pass
-
-    @wamp.register("com.lambentri.edge.la4.links.modify")
-    def modify_link(self, link_name, link_spec):
         pass
 
     @wamp.register("com.lambentri.edge.la4.links.destroy")

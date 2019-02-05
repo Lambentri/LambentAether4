@@ -57,14 +57,18 @@ class ZeroConfSession(ApplicationSession):
     def device_herald(self):
         built = []
         for k,v in self.current_items.items():
-            built.append({"name":v['name'], "id":f"com.lambentri.edge.la4.device.82667777.{k}"})
+            print(v)
+            built.append({"iname":v['iname'], "id":f"com.lambentri.edge.la4.device.82667777.{k}", "name":v.get('nname', v['name'].split('.',1)[0])})
         print(built)
-        yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", sinks=built)
+        yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
 
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
         return {"devices": self.current_items}
 
+    @wamp.register("com.lambentri.edge.la4.device.82667777.name")
+    def set_name(self, shortname, nicename):
+        self.current_items[shortname]['nname'] = nicename
 
     # zeroconf methods
     def remove_service(self, zeroconf, type, name):
@@ -76,7 +80,7 @@ class ZeroConfSession(ApplicationSession):
         print("Service %s added, service info: %s, %s" % (name, info, type))
         print(socket.inet_ntoa(info.address))
         name_p = name.split('.', 1)[0]
-        self.current_items[name_p] = {"address": socket.inet_ntoa(info.address), "name": name, "port": info.port}
+        self.current_items[name_p] = {"address": socket.inet_ntoa(info.address), "name": name_p, "iname": name, "port": info.port}
         self.subs[name_p] = self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{name_p}",
                                            options=SubscribeOptions(details_arg="details", correlation_id=name))
         print(self.subs)

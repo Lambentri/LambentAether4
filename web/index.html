@@ -63,11 +63,18 @@
                                         <v-container grid-list-sm fluid>
                                             <v-layout row wrap>
                                                 <v-flex v-for="(value, key, index) in devices82667777.devices"
-                                                        :key="index" xs6 lg3>
+                                                        :key="index" xs6 lg6>
                                                     <v-card flat tile color="blue-grey darken-2">
                                                         <v-card-title>
                                                             <v-icon color="teal lighten-2">devices</v-icon> &emsp;
-                                                            {{ value.name.split('.')[0] }}
+                                                            <v-tooltip bottom>
+                                                                <span slot="activator">{{ value.name }}</span>
+                                                                <span>{{value.iname }}|{{value.address}}|{{ value.port }}</span>
+                                                            </v-tooltip>
+                                                            <v-chip color="purple" text-color="white" v-on:click="alert(000)">
+                                                                <v-icon>label</v-icon>
+                                                                {{ value.nname || value.name }}
+                                                            </v-chip>
                                                         </v-card-title>
                                                         <v-card-text>
                                                             <v-chip color="purple" text-color="white">
@@ -222,7 +229,7 @@
                                                     <v-text-field
                                                             v-model="machine_init_name"
                                                             append-icon="mdi-autorenew"
-                                                             @click:append="new_name"
+                                                             @click:append="new_name('machine_init_name')"
                                                             label="Solo"
                                                             placeholder="Placeholder"
                                                             solo
@@ -463,10 +470,10 @@
                                                 <v-flex xs12 sm6 d-flex>
                                                     <v-combobox
                                                             v-model="link_dialog_sel_src"
-                                                            :items="machines_as_list"
-                                                            :hint="`${link_dialog_sel_src.name}, ${link_dialog_sel_src.desc}`"
+                                                            :items="link_library"
+                                                            :hint="`${link_dialog_sel_src.ttl}, ${link_dialog_sel_src.cls}, `"
                                                             label="Sources"
-                                                            item-text="id"
+                                                            item-text="listname"
                                                             label="Select"
                                                             persistent-hint
                                                             return-object
@@ -477,10 +484,10 @@
                                                 <v-flex xs12 sm6 d-flex>
                                                     <v-combobox
                                                             v-model="link_dialog_sel_dest"
-                                                            :items="machines_as_list"
-                                                            :hint="`${link_dialog_sel_dest.name}, ${link_dialog_sel_dest.desc}`"
+                                                            :items="sink_library"
+                                                            :hint="`${link_dialog_sel_dest.id}, ${link_dialog_sel_dest.iname}`"
                                                             label="Sinks"
-                                                            item-text="id"
+                                                            item-text="listname"
                                                             label="Select"
                                                             persistent-hint
                                                             return-object
@@ -493,13 +500,13 @@
                                     </v-list-tile>
                                     <v-list-tile avatar>
                                         <v-list-tile-content>
-                                            <v-list-tile-title>Name The Machine</v-list-tile-title>
+                                            <v-list-tile-title>Name The Link</v-list-tile-title>
                                             <v-list-tile-sub-title>
                                                 <v-flex xs12 sm6 md3>
                                                     <v-text-field
-                                                            v-model="machine_init_name"
+                                                            v-model="link_dialog_sel_name"
                                                             append-icon="mdi-autorenew"
-                                                             @click:append="new_name"
+                                                             @click:append="new_name('link_dialog_sel_name')"
                                                             label="Solo"
                                                             placeholder="Placeholder"
                                                             solo
@@ -672,11 +679,12 @@
                             }
                         )
                     },
-                    new_name: function () {
+                    new_name: function (name_field) {
                         console.log("New Name")
+                        console.log(name_field)
                         Vue.Wamp.call("com.lambentri.edge.la4.helpers.namegen").then(
                             function (res) {
-                                window.vueapp.$data.machine_init_name = res.name
+                                window.vueapp.$data[name_field] = res.name
                             },
                             function (err) {
                                 console.log(err)
@@ -710,6 +718,33 @@
                                 console.log(err)
                             }
                         )
+                    },
+
+                    link_save: function () {
+                        console.log("link.save")
+                        console.log(this.link_dialog_sel_dest)
+                        console.log(this.link_dialog_sel_name)
+                        if (typeof this.link_dialog_sel_dest === "string"|| this.link_dialog_sel_dest instanceof String) {
+                            // Deal with the arbitrary target case
+                            console.log("link.save.target.str")
+                        }
+                        else {
+                            console.log("link.save.target.obj" )
+
+                        }
+                    },
+
+                    device_name: function (shortname, nicename) {
+                        console.log("device.name")
+                        Vue.Wamp.call("com.lambentri.edge.la4.device.82667777.name", [], {"shortname": shortname, "nicename":nicename}).then(
+                            function (res) {
+//                                window.vueapp.$data.machines = res.machines
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     }
                 },
                 computed: {
@@ -719,7 +754,7 @@
 
                     machines_as_list: function () {
                         return Object.values(this.machines)
-                    }
+                    },
 
                     // todo add combined lambents/named sources and devices/named sinks
                 },
@@ -737,7 +772,7 @@
                         }
                     },
                     machine_dialog_init: function (newVal, oldVal) {
-                        this.new_name()
+                        this.new_name("machine_init_name")
                     }
                 }
             })
