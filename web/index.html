@@ -727,11 +727,30 @@
                         if (typeof this.link_dialog_sel_dest === "string"|| this.link_dialog_sel_dest instanceof String) {
                             // Deal with the arbitrary target case
                             console.log("link.save.target.str")
+                            link_spec = {
+                                "source": this.link_dialog_sel_src.id,
+                                "target": "com.lambentri.edge.la4.machine.link.lnk." + this.link_dialog_sel_name,
+                                "target_name": "LINK-SINK-x-" + this.link_dialog_sel_name,
+                                "source_cls": "lnk"
+                            }
                         }
                         else {
-                            console.log("link.save.target.obj" )
-
+                            console.log("link.save.target.obj")
+                            link_spec = {
+                                "source": this.link_dialog_sel_src,
+                                "target": this.link_dialog_sel_dest,
+                            }
                         }
+                        link_name = this.link_dialog_sel_name
+                        Vue.Wamp.call("com.lambentri.edge.la4.links.save", [], {"link_name": link_name, "link_spec":link_spec}).then(
+                            function (res) {
+//                                window.vueapp.$data.machines = res.machines
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
                     },
 
                     device_name: function (shortname, nicename) {

@@ -164,9 +164,9 @@ class LambentMachine(ApplicationSession):
                 # print(res)
                 print(vars)
                 print(vars(mach))
-                yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res)
-                yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
-                yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
+                yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res, id=mach.id)
+                # yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
+                # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
             # print(res[0:12])
             pass
 
@@ -236,7 +236,7 @@ class LambentMachine(ApplicationSession):
 
         return machine_ret
 
-    @inlineCallbacks
+    # @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.machine.init")
     def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs={}):
         # this is called on startup as well as when adding new configs
@@ -260,7 +260,7 @@ class LambentMachine(ApplicationSession):
         self.machines[id] = mach
         res = self.machines[id].step()
         print(res)
-        yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
+        # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
 
     @wamp.register("com.lambentri.edge.la4.machine.edit")
     def modify_machine_instance(self):

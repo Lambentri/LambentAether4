@@ -20,6 +20,8 @@ class LinkManager(ApplicationSession):
     sinks = {}
     sinks_lseen = {}
     links = {}
+    link_subs = {}
+    link_src_map = {}
 
     HERALD_TICKS = .5
 
@@ -35,9 +37,9 @@ class LinkManager(ApplicationSession):
         self.ticker_herald.start(self.HERALD_TICKS)
 
     @wamp.subscribe(LINK_PREFIX, options=SubscribeOptions(match="prefix", details_arg="details"))
-    def link_noticer(self, res, details):
-        print(res[0:100])
-        print(details)
+    def link_noticer(self, res, details, id):
+        # print(res[0:100])
+        # print(details)
         """
         notices a link being created and stores the last-seen etc, for UI purposes
         :return: 
@@ -47,9 +49,9 @@ class LinkManager(ApplicationSession):
         self.sources[split_topic] = [src_class, src_topic]
         self.sources_lseen[split_topic] = datetime.datetime.now()
         # todo flush to redis
-        print(src_class)
-        print(src_topic)
-        print(split_topic)
+        # print(src_class)
+        # print(src_topic)
+        # print(split_topic)
 
     @wamp.subscribe(SINK_PREFIX, options=SubscribeOptions(match="prefix", details_arg="details"))
     def sink_noticer(self, res, details):
@@ -98,9 +100,17 @@ class LinkManager(ApplicationSession):
             last_seen = self.sources_lseen[f"{src}.{topic}"]
             how_long = datetime.datetime.now() - last_seen
             how_long_s = self._how_long_to_repr(how_long)
-            built.append({"listname":topic, "ttl":how_long_s, "id": f"{LINK_PREFIX}.{topic}", "cls": src})
+            built.append({"listname":topic, "ttl":how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
 
         yield self.publish("com.lambentri.edge.la4.links", links=built, sinks=self.computed_sinks)
+
+    @inlineCallbacks
+    def pass_link(self, *args, **kwargs):
+        print(args)
+        print(kwargs)
+        print(kwargs.get('details'))
+        print(self.link_src_map[kwargs.get('id')])
+        yield self.publish(self.link_src_map[kwargs.get('id')], args[0], id=self.links[kwargs.get('id')])
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
     def disable_link(self):
@@ -112,7 +122,11 @@ class LinkManager(ApplicationSession):
 
         We're going to be super lazy and assume the name engine won't collide too hard
         """
-        pass
+        print(link_name)
+        print(link_spec)
+        self.links[link_spec['source']['listname']] = link_name
+        self.link_subs[link_name] = self.subscribe(self.pass_link, topic=link_spec['source']['id'], options=SubscribeOptions(details_arg="details", correlation_id=link_name, correlation_is_anchor=True))
+        self.link_src_map[link_spec['source']['listname']] = link_spec['target']['id']
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name):

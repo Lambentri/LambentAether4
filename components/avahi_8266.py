@@ -86,7 +86,7 @@ class ZeroConfSession(ApplicationSession):
         print(self.subs)
 
     # udp methods
-    def udp_send(self, message, details):
+    def udp_send(self, message, details, id=None):
         print(details)
         name = details.topic.rsplit('.', 1)[1]
 
