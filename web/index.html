@@ -173,6 +173,61 @@
                                             <v-icon dark>add</v-icon>
                                         </v-btn>
                                     </v-card-text>
+                                    <v-container grid-list-sm fluid>
+                                            <v-layout row wrap>
+                                                <v-flex v-for="(value, key) in link_library" :key="key " xs8 lg6>
+                                                    <v-card flat tile color="blue-grey darken-2">
+                                                        <v-card-title>
+                                                            <v-icon color="teal lighten-2">link</v-icon> &emsp;
+                                                            {{ value.name }}
+                                                            <v-chip color="green" text-color="white"
+                                                                    v-if="value.active === true" right
+                                                                    v-on:click="link_toggle(key)">
+                                                                <v-avatar>
+                                                                    <v-icon>mdi-plus-circle-outline</v-icon>
+                                                                </v-avatar>
+                                                                Enabled
+                                                            </v-chip>
+                                                            <v-chip color="red" text-color="white"
+                                                                    v-if="value.active === false" right
+                                                                    v-on:click="link_toggle(key)">
+                                                                <v-avatar>
+                                                                    <v-icon>mdi-minus-circle-outline</v-icon>
+                                                                </v-avatar>
+                                                                Disabled
+                                                            </v-chip>
+                                                        </v-card-title>
+                                                        <v-card-text>
+                                                            <v-btn-toggle>
+                                                                <v-btn flat value="left">
+                                                                    <v-icon>mdi-chevron-right</v-icon>
+                                                                    <span>{{ value.full_spec.source.listname }}</span>
+                                                                    <v-icon>mdi-chevron-right</v-icon>
+                                                                </v-btn>
+                                                                <v-btn value="center" v-if="value.active === true" color="info" v-on:click="link_toggle(key)">
+                                                                    <span>{{ value.name }}</span>
+                                                                </v-btn>
+                                                                <v-btn value="center" v-if="value.active === false" color="warning" v-on:click="link_toggle(key)">
+                                                                    <span>{{ value.name }}</span>
+                                                                </v-btn>
+                                                                <v-btn flat value="right">
+                                                                    <v-icon>mdi-chevron-right</v-icon>
+                                                                    <span>{{ value.full_spec.target.listname }}</span>
+                                                                    <v-icon>mdi-chevron-right</v-icon>
+                                                                </v-btn>
+                                                            </v-btn-toggle>
+
+                                                            <!--{{ key }}xx {{ value }} {{ index }}-->
+                                                            <v-btn absolute fab dark top right small color="danger"
+                                                                   v-on:click="link_rm(key)">
+                                                                <v-icon dark>remove_circle</v-icon>
+                                                            </v-btn>
+                                                        </v-card-text>
+
+                                                    </v-card>
+                                                </v-flex>
+                                            </v-layout>
+                                        </v-container>
                                 </v-card>
                             </v-tab-item>
                             <v-tab-item key="4  " xs12 sm12 md12>
@@ -187,7 +242,7 @@
                     <v-layout row justify-center> <!-- machine init dialog -->
                         <v-dialog v-model="machine_dialog_init" fullscreen hide-overlay
                                   transition="dialog-bottom-transition">
-                            <v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>
+                            <!--<v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>-->
                             <v-card>
                                 <v-toolbar dark color="primary">
                                     <v-btn icon dark @click="machine_dialog_init = false">
@@ -331,7 +386,7 @@
                     <v-layout row justify-center> <!-- Machine library dialog -->
                         <v-dialog v-model="machine_dialog_library" fullscreen hide-overlay
                                   transition="dialog-bottom-transition">
-                            <v-btn slot="activator" color="secondary" dark>Open Dialog</v-btn>
+                            <!--<v-btn slot="activator" color="secondary" dark>Open Dialog</v-btn>-->
                             <v-card>
                                 <v-toolbar dark color="primary">
                                     <v-btn icon dark @click="machine_dialog_library = false">
@@ -385,7 +440,7 @@
                     <v-layout row justify-center> <!-- Link library dialogs -->
                         <v-dialog v-model="link_library_dialog" fullscreen hide-overlay
                                   transition="dialog-bottom-transition">
-                            <v-btn slot="activator" color="secondary" dark>Open Dialog</v-btn>
+                            <!--<v-btn slot="activator" color="secondary" dark>Open Dialog</v-btn>-->
                             <v-card>
                                 <v-toolbar dark color="primary">
                                     <v-btn icon dark @click="link_library_dialog = false">
@@ -398,7 +453,7 @@
                                     </v-toolbar-items>
                                 </v-toolbar>
                                 <v-item-group>
-                                    <v-container grid-list-md v-for="(items, key) in link_library" :key="key">
+                                    <v-container grid-list-md v-for="(items, key) in src_library" :key="key">
                                         <v-layout wrap>
                                             <v-flex xs12 md2>
                                                 <v-item>
@@ -449,7 +504,7 @@
                         </v-dialog>
                         <v-dialog v-model="link_dialog" fullscreen hide-overlay
                                   transition="dialog-bottom-transition">
-                            <v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>
+                            <!--<v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>-->
                             <v-card>
                                 <v-toolbar dark color="primary">
                                     <v-btn icon dark @click="link_dialog = false">
@@ -470,7 +525,7 @@
                                                 <v-flex xs12 sm6 d-flex>
                                                     <v-combobox
                                                             v-model="link_dialog_sel_src"
-                                                            :items="link_library"
+                                                            :items="src_library"
                                                             :hint="`${link_dialog_sel_src.ttl}, ${link_dialog_sel_src.cls}, `"
                                                             label="Sources"
                                                             item-text="listname"
@@ -556,6 +611,7 @@
                     session.subscribe("com.lambentri.edge.la4.links", function (args, kwargs, details) {
                         window.vueapp.$data.link_library = kwargs.links;
                         window.vueapp.$data.sink_library = kwargs.sinks;
+                        window.vueapp.$data.src_library = kwargs.srcs;
                     }).then(function (s) {
                          console.log('AutobahnJS Subscription object: ', s);
                     });
@@ -634,6 +690,7 @@
                     link_selected_id: "",
 
                     sink_library: {},
+                    src_library: {},
 
                     devices82667777: {},
                     activetab: 0,
@@ -752,6 +809,40 @@
                             }
                         )
                     },
+
+                    link_toggle: function(name) {
+                        if (this.link_library[name].active === false ){
+                            Vue.Wamp.call("com.lambentri.edge.la4.links.toggle", [], {"link_name": name}).then(
+                            function (res) {
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )}
+                        else {
+                            Vue.Wamp.call("com.lambentri.edge.la4.links.disable", [], {"link_name": name}).then(
+                            function (res) {
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                        }
+
+                    },
+                    link_rm: function (name) {
+                        Vue.Wamp.call("com.lambentri.edge.la4.links.destroy", [], {"link_name": name}).then(
+                            function (res) {
+                                console.log(res)
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                    },
+
 
                     device_name: function (shortname, nicename) {
                         console.log("device.name")

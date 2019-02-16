@@ -93,29 +93,47 @@ class LinkManager(ApplicationSession):
 
     @inlineCallbacks
     def link_herald(self):
-        built = []
+        built_srcs = []
         for src, topic in self.sources.values():
             # if src not in built:
             #     built[src] = []
             last_seen = self.sources_lseen[f"{src}.{topic}"]
             how_long = datetime.datetime.now() - last_seen
             how_long_s = self._how_long_to_repr(how_long)
-            built.append({"listname":topic, "ttl":how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
+            built_srcs.append({"listname":topic, "ttl":how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
 
-        yield self.publish("com.lambentri.edge.la4.links", links=built, sinks=self.computed_sinks)
+        built_links = self.links
+
+
+        yield self.publish("com.lambentri.edge.la4.links", links=built_links, sinks=self.computed_sinks, srcs=built_srcs)
 
     @inlineCallbacks
     def pass_link(self, *args, **kwargs):
-        print(args)
-        print(kwargs)
-        print(kwargs.get('details'))
+        # print(args)
+        # print(kwargs)
+        # print(kwargs.get('details'))
         print(self.link_src_map[kwargs.get('id')])
-        yield self.publish(self.link_src_map[kwargs.get('id')], args[0], id=self.links[kwargs.get('id')])
+        if self.links[kwargs.get('id')]['active']:
+            yield self.publish(self.link_src_map[kwargs.get('id')], args[0], id=self.links[kwargs.get('id')]['name'])
 
-    @wamp.register("com.lambentri.edge.la4.links.disable")
-    def disable_link(self):
-        pass
+    def _do_toggle(self, target, exclude=None):
+        """ Disables all links pointing to a given target
 
+        pass an exclusion ID to keep from excluding sources during the toggle call
+        """
+        to_disable = [k for k,v in self.link_src_map.items() if v == target]
+        for td in to_disable:
+            if td == exclude:
+                self.links[td]['active'] = True
+            else:
+                self.links[td]['active'] = False
+
+        print(self.links)
+
+    def _do_disable(self, link_id):
+        self.links[link_id]['active'] = False
+
+    @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.links.save")
     def save_link(self, link_name, link_spec):
         """ Create, save, and modify. All in one!
@@ -124,23 +142,37 @@ class LinkManager(ApplicationSession):
         """
         print(link_name)
         print(link_spec)
-        self.links[link_spec['source']['listname']] = link_name
-        self.link_subs[link_name] = self.subscribe(self.pass_link, topic=link_spec['source']['id'], options=SubscribeOptions(details_arg="details", correlation_id=link_name, correlation_is_anchor=True))
-        self.link_src_map[link_spec['source']['listname']] = link_spec['target']['id']
+
+        list_name = link_spec['source']['listname']
+        target_id = link_spec['target']['id']
+        source_id = link_spec['source']['id']
+        self._do_toggle(link_spec['target']['id'], exclude=list_name)
+        self.links[list_name] = {"name":link_name, "active": True, "list_name":list_name, "full_spec":link_spec}
+        self.link_subs[link_name] = yield self.subscribe(self.pass_link, topic=source_id, options=SubscribeOptions(details_arg="details", correlation_id=link_name, correlation_is_anchor=True))
+        self.link_src_map[list_name] = target_id
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name):
+        print("TOGGLE")
         """Toggles a link on, will disable all others that are pointing to a given device / src"""
-        pass
+        target = self.link_src_map[link_name]
+        self._do_toggle(target, exclude=link_name)
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
     def disable_link(self, link_name):
+        print("DISABLE")
         """Disables a link (more or less the same as toggling, but to turn off the lights?"""
-        pass
+        self._do_disable(link_name)
 
     @wamp.register("com.lambentri.edge.la4.links.destroy")
     def destroy_link(self, link_name):
-        pass
+        list_name = self.links[link_name]['name']
+        print(list_name)
+        print(link_name)
+        self.link_subs[list_name].unsubscribe()
+        del self.link_subs[list_name]
+        del self.link_src_map[link_name]
+        del self.links[link_name]
 
 if __name__ == '__main__':
     url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8080/ws")

@@ -6,6 +6,7 @@ from autobahn import wamp
 from enum import Enum
 import os
 import txaio
+from autobahn.wamp.types import PublishOptions
 from marshmallow import fields
 from marshmallow.schema import Schema
 from marshmallow_enum import EnumField
@@ -164,11 +165,12 @@ class LambentMachine(ApplicationSession):
                 # print(res)
                 print(vars)
                 print(vars(mach))
-                yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res, id=mach.id)
+
                 # yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
                 # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
             # print(res[0:12])
-            pass
+            options = PublishOptions(retain=True)
+            yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res, id=mach.id, options=options)
 
     def change_machine_ticks(self, machine_name: str, machine_tick: TickEnum):
         pass  # changes the value of the tick enum on the machine
