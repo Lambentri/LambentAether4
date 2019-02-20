@@ -72,6 +72,7 @@ class ComposableDict(fields.Dict):
 
 class MachineSerializer(Schema):
     name = fields.Str()
+    iname = fields.Str()
     speed = EnumField(TickEnum)
     running = EnumField(RunningEnum)
     id = fields.Str()
@@ -259,6 +260,7 @@ class LambentMachine(ApplicationSession):
         id = f"{cls.__name__}-x-{machine_name}"
         mach = cls(config_params=built_kwargs)
         mach.set_id(id)
+        mach.set_instance_name(machine_name)
         self.machines[id] = mach
         res = self.machines[id].step()
         print(res)

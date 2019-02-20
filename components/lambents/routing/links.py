@@ -21,7 +21,8 @@ class LinkManager(ApplicationSession):
     sinks_lseen = {}
     links = {}
     link_subs = {}
-    link_src_map = {}
+    link_tgt_map = {}
+    link_name_to_source = {}
 
     HERALD_TICKS = .5
 
@@ -107,28 +108,42 @@ class LinkManager(ApplicationSession):
 
         yield self.publish("com.lambentri.edge.la4.links", links=built_links, sinks=self.computed_sinks, srcs=built_srcs)
 
+    def _find_link_by_src_id(self, target):
+        to_pass_to = []
+        for k,v in self.link_name_to_source.items():
+            if v == target:
+                to_pass_to.append(k)
+        return to_pass_to
+
+
     @inlineCallbacks
     def pass_link(self, *args, **kwargs):
-        # print(args)
-        # print(kwargs)
-        # print(kwargs.get('details'))
-        print(self.link_src_map[kwargs.get('id')])
-        if self.links[kwargs.get('id')]['active']:
-            yield self.publish(self.link_src_map[kwargs.get('id')], args[0], id=self.links[kwargs.get('id')]['name'])
+        links_to_pass = self._find_link_by_src_id(kwargs.get('id'))
+        for link in links_to_pass:
+            if self.links[link]['active']:
+                print(link)
+                print(self.link_tgt_map[link])
+                yield self.publish(self.link_tgt_map[link], args[0], id=self.links[link]['name'])
+        # print(self.link_src_map[kwargs.get('id')])
+        # if self.links[kwargs.get('id')]['active']:
+        #     yield self.publish(self.link_src_map[kwargs.get('id')], args[0], id=self.links[kwargs.get('id')]['name'])
 
     def _do_toggle(self, target, exclude=None):
         """ Disables all links pointing to a given target
 
         pass an exclusion ID to keep from excluding sources during the toggle call
         """
-        to_disable = [k for k,v in self.link_src_map.items() if v == target]
+        print(target)
+        to_disable = [k for k,v in self.link_tgt_map.items() if v == target]
+
+        print(to_disable)
         for td in to_disable:
             if td == exclude:
                 self.links[td]['active'] = True
             else:
                 self.links[td]['active'] = False
 
-        print(self.links)
+        # print(self.links)
 
     def _do_disable(self, link_id):
         self.links[link_id]['active'] = False
@@ -140,22 +155,24 @@ class LinkManager(ApplicationSession):
 
         We're going to be super lazy and assume the name engine won't collide too hard
         """
-        print(link_name)
-        print(link_spec)
+        # print(link_name)
+        # print(link_spec)
 
         list_name = link_spec['source']['listname']
         target_id = link_spec['target']['id']
         source_id = link_spec['source']['id']
         self._do_toggle(link_spec['target']['id'], exclude=list_name)
-        self.links[list_name] = {"name":link_name, "active": True, "list_name":list_name, "full_spec":link_spec}
+        self.links[link_name] = {"name":link_name, "active": True, "list_name":list_name, "full_spec":link_spec}
         self.link_subs[link_name] = yield self.subscribe(self.pass_link, topic=source_id, options=SubscribeOptions(details_arg="details", correlation_id=link_name, correlation_is_anchor=True))
-        self.link_src_map[list_name] = target_id
+        self.link_tgt_map[link_name] = target_id
+        self.link_name_to_source[link_name] = list_name
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name):
         print("TOGGLE")
         """Toggles a link on, will disable all others that are pointing to a given device / src"""
-        target = self.link_src_map[link_name]
+        print(link_name)
+        target = self.link_tgt_map[link_name]
         self._do_toggle(target, exclude=link_name)
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
@@ -169,9 +186,9 @@ class LinkManager(ApplicationSession):
         list_name = self.links[link_name]['name']
         print(list_name)
         print(link_name)
-        self.link_subs[list_name].unsubscribe()
-        del self.link_subs[list_name]
-        del self.link_src_map[link_name]
+        self.link_subs[link_name].unsubscribe()
+        del self.link_subs[link_name]
+        del self.link_tgt_map[link_name]
         del self.links[link_name]
 
 if __name__ == '__main__':

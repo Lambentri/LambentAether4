@@ -2,6 +2,8 @@ from copy import deepcopy
 
 
 class DefaultStep(object):
+    id = None
+    iname = None
     class meta:
         state = None
     def __init__(self, config_params, led_count: int=150):
@@ -22,6 +24,9 @@ class DefaultStep(object):
 
     def set_id(self, id): # We do this after init in machine invocation to keep the __init__ clear
         self.id = id
+
+    def set_instance_name(self, name):
+        self.iname = name
 
     @classmethod
     def get_config(self, do_serialize=True):

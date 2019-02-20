@@ -57,9 +57,7 @@ class ZeroConfSession(ApplicationSession):
     def device_herald(self):
         built = []
         for k,v in self.current_items.items():
-            print(v)
             built.append({"iname":v['iname'], "id":f"com.lambentri.edge.la4.device.82667777.{k}", "name":v.get('nname', v['name'].split('.',1)[0])})
-        print(built)
         yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
 
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
