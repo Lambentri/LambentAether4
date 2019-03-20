@@ -85,7 +85,7 @@ class ZeroConfSession(ApplicationSession):
 
     # udp methods
     def udp_send(self, message, details, id=None):
-        print(details)
+        # print(details)
         name = details.topic.rsplit('.', 1)[1]
 
         chunked = chunks(message, 3)

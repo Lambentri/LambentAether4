@@ -121,8 +121,8 @@ class LinkManager(ApplicationSession):
         links_to_pass = self._find_link_by_src_id(kwargs.get('id'))
         for link in links_to_pass:
             if self.links[link]['active']:
-                print(link)
-                print(self.link_tgt_map[link])
+                # print(link)
+                # print(self.link_tgt_map[link])
                 yield self.publish(self.link_tgt_map[link], args[0], id=self.links[link]['name'])
         # print(self.link_src_map[kwargs.get('id')])
         # if self.links[kwargs.get('id')]['active']:
@@ -143,10 +143,26 @@ class LinkManager(ApplicationSession):
             else:
                 self.links[td]['active'] = False
 
-        # print(self.links)
+        # TODO: Redo the above code to generate a wedge pattern that will enable a smooth fade over the course of a few seconds between values
+        # PRE: save the current state of latest current link values being passed through in pass_link
+        # set all active to False
+        # collect the current state of a given link
+        # collect the current state of the one to be active
+        # build a transfer buffer to smoothly switch patterns
+        # pass pattern to link target
+        # set active to True
+
 
     def _do_disable(self, link_id):
         self.links[link_id]['active'] = False
+
+        # TODO: Add a little hook in here that sends out a fadeout of current program to standby pattern
+        # collect the current state of the given link
+        # mark link inactive
+        # build a fade buffer from the existing buffer
+        # pass pattern to link target
+        # at end mark the current state buffer as our standby values so the toggle above can extrapolate back
+
 
     @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.links.save")

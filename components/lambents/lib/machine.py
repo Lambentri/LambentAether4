@@ -155,6 +155,9 @@ class LambentMachine(ApplicationSession):
 
     @inlineCallbacks
     def do_tick(self, enum: TickEnum):
+        if not self.is_connected():
+            print("TICK, not connected, passings")
+            return
         # print(self.machines.values())
         operating_machines = filter(lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value, self.machines.values())
         # print(operating_machines)

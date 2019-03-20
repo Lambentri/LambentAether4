@@ -24,7 +24,7 @@
                     "caller": false,
                     "publisher": false
                   },
-                  "cache": truew
+                  "cache": true
                 },
                 {
                   "uri": "wamp.subscription.get_events",
