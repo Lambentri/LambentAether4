@@ -6,10 +6,14 @@ class DefaultStep(object):
     iname = None
     class meta:
         state = None
-    def __init__(self, config_params, led_count: int=150):
+    def __init__(self, config_params, led_count: int=150, set_status=False):
         state = self.meta.state
         kwargs = state.validate(self.meta.config, config_params)
-        self.leds = [state(**kwargs) for i in range(led_count)] # tbd
+        if not set_status:
+            self.leds = [state(**kwargs) for i in range(led_count)] # tbd
+        else:
+            self.leds = [state(**kwargs, status=i) for i in range(led_count)]  # tbd
+
 
 
     def step(self):

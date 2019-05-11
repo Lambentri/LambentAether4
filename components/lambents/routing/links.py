@@ -2,6 +2,8 @@
 # can be empty for direct rooting from source -> device
 import datetime
 import os
+from dataclasses import dataclass
+
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn import wamp
 from autobahn.wamp.types import SubscribeOptions
@@ -13,6 +15,12 @@ LINK_PREFIX = "com.lambentri.edge.la4.machine.link"
 LINK_PREFIX_ = f"{LINK_PREFIX}."
 SINK_PREFIX = "com.lambentri.edge.la4.machine.sink"
 SINK_PREFIX_ = f"{SINK_PREFIX}."
+
+
+@dataclass
+class Link:
+    pass
+
 
 class LinkManager(ApplicationSession):
     sources = {}
@@ -46,7 +54,7 @@ class LinkManager(ApplicationSession):
         :return: 
         """
         split_topic = details.topic.split(LINK_PREFIX_)[1]
-        src_class, src_topic = split_topic.split('.',1)
+        src_class, src_topic = split_topic.split('.', 1)
         self.sources[split_topic] = [src_class, src_topic]
         self.sources_lseen[split_topic] = datetime.datetime.now()
         # todo flush to redis
@@ -75,11 +83,11 @@ class LinkManager(ApplicationSession):
     def computed_sinks(self):
         sdict = deepcopy(self.sinks)
         returnvals = []
-        for groupkey,objects in sdict.items():
-            for k,v in objects.items():
+        for groupkey, objects in sdict.items():
+            for k, v in objects.items():
                 vname = v['name']
                 returnvals.append({
-                    "listname" : f"{groupkey}.{vname}",
+                    "listname": f"{groupkey}.{vname}",
                     "grp": groupkey,
                     **v
                 })
@@ -101,20 +109,19 @@ class LinkManager(ApplicationSession):
             last_seen = self.sources_lseen[f"{src}.{topic}"]
             how_long = datetime.datetime.now() - last_seen
             how_long_s = self._how_long_to_repr(how_long)
-            built_srcs.append({"listname":topic, "ttl":how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
+            built_srcs.append({"listname": topic, "ttl": how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
 
         built_links = self.links
 
-
-        yield self.publish("com.lambentri.edge.la4.links", links=built_links, sinks=self.computed_sinks, srcs=built_srcs)
+        yield self.publish("com.lambentri.edge.la4.links", links=built_links, sinks=self.computed_sinks,
+                           srcs=built_srcs)
 
     def _find_link_by_src_id(self, target):
         to_pass_to = []
-        for k,v in self.link_name_to_source.items():
+        for k, v in self.link_name_to_source.items():
             if v == target:
                 to_pass_to.append(k)
         return to_pass_to
-
 
     @inlineCallbacks
     def pass_link(self, *args, **kwargs):
@@ -134,7 +141,7 @@ class LinkManager(ApplicationSession):
         pass an exclusion ID to keep from excluding sources during the toggle call
         """
         print(target)
-        to_disable = [k for k,v in self.link_tgt_map.items() if v == target]
+        to_disable = [k for k, v in self.link_tgt_map.items() if v == target]
 
         print(to_disable)
         for td in to_disable:
@@ -152,7 +159,6 @@ class LinkManager(ApplicationSession):
         # pass pattern to link target
         # set active to True
 
-
     def _do_disable(self, link_id):
         self.links[link_id]['active'] = False
 
@@ -162,7 +168,6 @@ class LinkManager(ApplicationSession):
         # build a fade buffer from the existing buffer
         # pass pattern to link target
         # at end mark the current state buffer as our standby values so the toggle above can extrapolate back
-
 
     @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.links.save")
@@ -178,8 +183,11 @@ class LinkManager(ApplicationSession):
         target_id = link_spec['target']['id']
         source_id = link_spec['source']['id']
         self._do_toggle(link_spec['target']['id'], exclude=list_name)
-        self.links[link_name] = {"name":link_name, "active": True, "list_name":list_name, "full_spec":link_spec}
-        self.link_subs[link_name] = yield self.subscribe(self.pass_link, topic=source_id, options=SubscribeOptions(details_arg="details", correlation_id=link_name, correlation_is_anchor=True))
+        self.links[link_name] = {"name": link_name, "active": True, "list_name": list_name, "full_spec": link_spec}
+        self.link_subs[link_name] = yield self.subscribe(self.pass_link, topic=source_id,
+                                                         options=SubscribeOptions(details_arg="details",
+                                                                                  correlation_id=link_name,
+                                                                                  correlation_is_anchor=True))
         self.link_tgt_map[link_name] = target_id
         self.link_name_to_source[link_name] = list_name
 
@@ -206,6 +214,7 @@ class LinkManager(ApplicationSession):
         del self.link_subs[link_name]
         del self.link_tgt_map[link_name]
         del self.links[link_name]
+
 
 if __name__ == '__main__':
     url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8080/ws")

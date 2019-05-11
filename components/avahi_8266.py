@@ -47,8 +47,9 @@ class ZeroConfSession(ApplicationSession):
     def onLeave(self, details):
         print("session left")
         self.browser.cancel()
+        print("give zeroconf some seconds to quit")
         self.zeroconf.close()
-        sys.exit(0)
+        os._exit(0)
 
     def onDisconnect(self):
         print("transport disconnected")

@@ -49,7 +49,7 @@ class SolidStateHSV(HSVHelper, BaseState):
 class SolidStep(DefaultStep):
     desc = "return a solid color"
     name = "Solid Step (RGB)"
-    speed = TickEnum.TENS
+    speed = TickEnum.ONES
     running = RunningEnum.RUNNING
     grps = ['solids']
 
@@ -74,7 +74,7 @@ class SolidStep(DefaultStep):
 class SolidStepHSV(DefaultStep):
     desc = "return a solid color"
     name = "Solid Step (HSV)"
-    speed = TickEnum.TENS
+    speed = TickEnum.ONES
     running = RunningEnum.RUNNING
     grps = ['solids']
 

@@ -1,3 +1,4 @@
+import argparse
 import importlib
 import pydoc
 
@@ -11,10 +12,8 @@ from marshmallow import fields
 from marshmallow.schema import Schema
 from marshmallow_enum import EnumField
 from twisted.internet import task
-
-
-# enums
 from twisted.internet.defer import inlineCallbacks
+from yaml import load, Loader, YAMLError
 
 
 class TickEnum(Enum):
@@ -56,6 +55,9 @@ class RunningEnum(Enum):
     NOTRUNNING = False
 
 
+class MachineLoadException(Exception):
+    pass
+
 # serialization
 class ComposableDict(fields.Dict):
 
@@ -87,7 +89,7 @@ class MachineDictSerializer(Schema):
 # machines
 class FakeMachine(object):
     def step(self):
-        return [0,0,0]
+        return [0, 0, 0]
 
 
 class SlowFakeMachine(FakeMachine):
@@ -115,18 +117,69 @@ class FastFakeMachine(FakeMachine):
 
 class LambentMachine(ApplicationSession):
     tickers = {}
-    machines = {"SlowFakeMachine-a.b": SlowFakeMachine(), "FastFakeMachine-c.d": FastFakeMachine()}
+    machines = {
+        "SlowFakeMachine-a.b": SlowFakeMachine(),
+        "FastFakeMachine-c.d": FastFakeMachine()
+    }
     machine_library = [
         SlowFakeMachine,
         FastFakeMachine,
         "lambents.solids.SolidStep",
         "lambents.solids.SolidStepHSV",
-        "lambents.solids.SolidStepHSBBBB"
+        "lambents.solids.SolidStepHSBBBB",
+        "lambents.chasers.SimpleColorChaser",
+        "lambents.chasers.MultiColorChaser",
+        "lambents.chasers.MultiNoSpaceChaser",
+        "lambents.rainbows.RainbowChaser",
     ]
+
+    def _handle_loading_config_from_file(self, path):
+        try:
+            f = open(path)
+            loaded = load(f)
+            print(loaded)
+        except FileNotFoundError:
+            self.log.info("config file: attempted to load but file not found")
+            return
+        except YAMLError:
+            self.log.info("config file: failed to parse YAML")
+            return
+
+        self.log.info("config file: loaded from path")
+        if "machines" not in loaded:
+            self.log.info("config file: no machines segment in config!")
+            return
+
+        machines = loaded['machines']
+        for mach in machines:
+            try:
+                self.init_machine_instance(
+                    machine_cls=mach.get("cls"),
+                    machine_name=mach.get("name"),
+                    machine_kwargs=mach.get("kwargs"),
+                    direct=True,
+                )
+            except MachineLoadException as e:
+                print("failed to load from config", e)
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
         txaio.start_logging()
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--config", help="A config file to read from")
+        args = parser.parse_args()
+
+        if args.config:
+            self.log.info("config file: passed in via args @ %s" % args.config)
+            self._handle_loading_config_from_file(args.config)
+
+        elif os.environ.get("LA4_CONFIG_PATH"):
+            path = os.environ.get("LA4_CONFIG_PATH")
+            self.log.info("config file: specified in environ @ %s" % path)
+            self._handle_loading_config_from_file(path)
+
+        # pull built-in machines from a config file if specified
 
         # get redis from config
         # check for passed in config file
@@ -159,19 +212,21 @@ class LambentMachine(ApplicationSession):
             print("TICK, not connected, passings")
             return
         # print(self.machines.values())
-        operating_machines = filter(lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value, self.machines.values())
+        operating_machines = filter(
+            lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value,
+            self.machines.values())
         # print(operating_machines)
         for mach in operating_machines:
 
             res = mach.step()
             # print(mach.speed.value == TickEnum.TENS.value)
-            if mach.speed.value == TickEnum.TENS.value:
-                # print(res)
-                print(vars)
-                print(vars(mach))
-
-                # yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
-                # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
+            # if mach.speed.value == TickEnum.TENS.value:
+            #     # print(res)
+            #     print(vars)
+            #     print(vars(mach))
+            #
+            #     # yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
+            #     # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
             # print(res[0:12])
             options = PublishOptions(retain=True)
             yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res, id=mach.id, options=options)
@@ -193,7 +248,7 @@ class LambentMachine(ApplicationSession):
                     return item
 
         else:
-            raise Exception(f"Unable to locate a lighting class named '{name}'")
+            raise MachineLoadException(f"Unable to locate a lighting class named '{name}'")
 
     @wamp.register("com.lambentri.edge.la4.machine.tick_up")
     def machine_tick_up(self, machine_name):
@@ -244,29 +299,42 @@ class LambentMachine(ApplicationSession):
 
     # @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.machine.init")
-    def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs={}):
+    def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs={}, direct=False):
         # this is called on startup as well as when adding new configs
-        print(machine_cls)
+        # startup uses direct=True, since we're not trying to de-chunk our chunked frontend UI
+        # print(machine_cls)
         cls = self._find_class_in_library(machine_cls)
-        print(machine_kwargs)
-        print(machine_name)
-        print(cls.__name__)
+        # print(machine_kwargs)
+        # print(machine_name)
+        # print(cls.__name__)
 
         # build kwargs for cls
-        built_kwargs = {}
-        for k,v in cls.meta.config.items():
-            print(k,v)
-            print(v['cls'].serialize().items())
-            if v['cls'].serialize()['name'] == "TupleConfig":
-                matching_config = [vi for ki,vi in machine_kwargs.items() if ki.startswith(k + "-")]
-                built_kwargs[k] = tuple(matching_config)
+        if not direct:
+            built_kwargs = {}
+            for k, v in cls.meta.config.items():
+                if v['cls'].serialize()['name'] == "TupleConfig":
+                    matching_config = [vi for ki, vi in machine_kwargs.items() if ki.startswith(k + "-")]
+                    built_kwargs[k] = tuple(matching_config)
+
+        else:
+            built_kwargs = machine_kwargs
+
+        if hasattr(cls.meta, "state_status"):
+            set_status=cls.meta.state_status
+        else:
+            set_status = False
+
+
         id = f"{cls.__name__}-x-{machine_name}"
-        mach = cls(config_params=built_kwargs)
+        mach = cls(config_params=built_kwargs, set_status=set_status)
         mach.set_id(id)
         mach.set_instance_name(machine_name)
+
+        if hasattr(cls.meta, "state_status"):
+            if cls.meta.state_status:
+                pass
         self.machines[id] = mach
         res = self.machines[id].step()
-        print(res)
         # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
 
     @wamp.register("com.lambentri.edge.la4.machine.edit")
@@ -303,7 +371,6 @@ class LambentMachine(ApplicationSession):
         serialized = schema.dump(
             {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
         return serialized.data
-
 
     # links
     @wamp.register("com.lambentri.edge.la4.manifold.create")
