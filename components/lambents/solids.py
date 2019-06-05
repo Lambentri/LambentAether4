@@ -11,6 +11,20 @@ class BaseState(object):  # moveme
     def read_rgb(self):
         raise NotImplemented("state needs to return an (r,g,b) tuple from read_rgb")
 
+    # generic step function
+    def _naive_step(self, current, dest):
+        if abs(current - dest) > self.sz:
+            if current > dest:
+                current -= self.sz
+            elif current < dest:
+                current += self.sz
+            else:
+                pass
+        else:
+            current = dest
+
+        return current
+
 
 class SolidState(BaseState):
 

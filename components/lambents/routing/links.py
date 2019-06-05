@@ -8,8 +8,10 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn import wamp
 from autobahn.wamp.types import SubscribeOptions
 from copy import deepcopy
-from twisted.internet import task
+from twisted.internet import task, reactor
 from twisted.internet.defer import inlineCallbacks
+
+from components.library import chunks
 
 LINK_PREFIX = "com.lambentri.edge.la4.machine.link"
 LINK_PREFIX_ = f"{LINK_PREFIX}."
@@ -19,7 +21,13 @@ SINK_PREFIX_ = f"{SINK_PREFIX}."
 
 @dataclass
 class Link:
-    pass
+    name: str
+    active: bool
+    list_name: str
+    full_spec: dict
+
+    def serialize(self):
+        return {"name": self.name, "active": self.active, "list_name": self.list_name, "full_spec": self.full_spec}
 
 
 class LinkManager(ApplicationSession):
@@ -27,12 +35,19 @@ class LinkManager(ApplicationSession):
     sources_lseen = {}
     sinks = {}
     sinks_lseen = {}
-    links = {}
+    links: dict = {}
     link_subs = {}
     link_tgt_map = {}
     link_name_to_source = {}
 
+    source_history = {}
+    iter_buffer_intermediate = {}
+    iter_buffer_loop_storage = {}
+    iter_buffer_timeout = {}
+
     HERALD_TICKS = .5
+
+    do_fade_between = True
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
@@ -111,7 +126,7 @@ class LinkManager(ApplicationSession):
             how_long_s = self._how_long_to_repr(how_long)
             built_srcs.append({"listname": topic, "ttl": how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
 
-        built_links = self.links
+        built_links = {k: v.serialize() for k, v in self.links.items()}
 
         yield self.publish("com.lambentri.edge.la4.links", links=built_links, sinks=self.computed_sinks,
                            srcs=built_srcs)
@@ -125,33 +140,157 @@ class LinkManager(ApplicationSession):
 
     @inlineCallbacks
     def pass_link(self, *args, **kwargs):
-        links_to_pass = self._find_link_by_src_id(kwargs.get('id'))
+        src_id = kwargs.get('id')
+        links_to_pass = self._find_link_by_src_id(src_id)
+        self.source_history[src_id] = args[0]
         for link in links_to_pass:
-            if self.links[link]['active']:
+            if self.links[link].active:
                 # print(link)
                 # print(self.link_tgt_map[link])
-                yield self.publish(self.link_tgt_map[link], args[0], id=self.links[link]['name'])
+                # self.source_history[src_id] = args[0]
+                yield self.publish(self.link_tgt_map[link], args[0], id=self.links[link].name)
         # print(self.link_src_map[kwargs.get('id')])
         # if self.links[kwargs.get('id')]['active']:
         #     yield self.publish(self.link_src_map[kwargs.get('id')], args[0], id=self.links[kwargs.get('id')]['name'])
+
+    def _step(self, src, tgt, size=3):
+        if src == tgt:
+            return tgt
+
+        elif src < tgt:
+            if src + size > tgt:
+                return tgt
+            else:
+                return src + size
+        elif src > tgt:
+            if src - size < tgt:
+                return tgt
+            else:
+                return src - size
+
+    def _do_naive_stepping_between_buffers(self, source, target):
+        # print("step")
+        # print(source[0:24])
+        # print(target[0:24])
+        src_c = chunks(source, 3)
+        tar_c = chunks(target, 3)
+
+        steppedbuffer = []
+        for rgbvals_s, rgbvals_t in zip(src_c, tar_c):
+            r_s, g_s, b_s = rgbvals_s
+            r_t, g_t, b_t = rgbvals_t
+            r_i, g_i, b_i = self._step(r_s, r_t), self._step(g_s, g_t), self._step(b_s, b_t)
+            steppedbuffer.extend([r_i, g_i, b_i])
+
+        return steppedbuffer
+
+    @inlineCallbacks
+    def _iterate_buffer(self, target, buffer, enable):
+        target_buffer = self.source_history[target]
+        if target not in self.iter_buffer_intermediate:
+            self.iter_buffer_intermediate[target] = buffer
+        else:
+            buffer = self.iter_buffer_intermediate[target]
+
+        working_buffer = self._do_naive_stepping_between_buffers(buffer, target_buffer)
+        # print( " W ^ T")
+        # print(working_buffer[0:24])
+        # print(target)
+        self.iter_buffer_intermediate[target] = working_buffer
+        yield self.publish(self.link_tgt_map[enable], working_buffer, id='inter')
+        now = datetime.datetime.now()
+        if working_buffer == target_buffer or self.iter_buffer_timeout[target] < now:
+            print("EQUALIZED OR TIMED OUT")
+            del self.iter_buffer_intermediate[target]
+            self.links[enable].active = True
+            self.iter_buffer_loop_storage[target].stop()
+        # when loop is complete
+        # delete iter_buffer
+        # enable excluded
+        # loop.stop()
 
     def _do_toggle(self, target, exclude=None):
         """ Disables all links pointing to a given target
 
         pass an exclusion ID to keep from excluding sources during the toggle call
         """
-        print(target)
-        to_disable = [k for k, v in self.link_tgt_map.items() if v == target]
+        # print("tgt")
+        # print(target)
+        #
+        # print("excl")
+        # print(exclude)
 
-        print(to_disable)
-        for td in to_disable:
-            if td == exclude:
-                self.links[td]['active'] = True
-            else:
-                self.links[td]['active'] = False
+        to_disable = [k for k, v in self.link_tgt_map.items() if v == target]
+        # print("todi")
+        # print(to_disable)
+
+        if self.links[exclude].list_name not in self.source_history:
+            task.deferLater(reactor, .1, self._do_toggle, target, exclude)
+            return
+
+        if not self.do_fade_between:
+            for td in to_disable:
+                if td == exclude:
+                    self.links[td].active = True
+                else:
+                    self.links[td].active = False
+            return
+
+        if all([not self.links[i].active for i in to_disable]):
+            self.links[exclude].active = True
+            return
 
         # TODO: Redo the above code to generate a wedge pattern that will enable a smooth fade over the course of a few seconds between values
-        # PRE: save the current state of latest current link values being passed through in pass_link
+        # PRE: save the current state of latest current source values being passed through in pass_link
+        if not self.links or not exclude:
+            return
+        try:
+            curr = next(i for i in to_disable if self.links[i].active)
+            # print("Currrr")
+            # print(curr)
+            curr_l = self.links[curr]
+            # print(curr_l)
+        except StopIteration:
+            # print("raised stoppppp")
+            return
+
+        # disable the active ones
+        for td in to_disable:
+            self.links[td].active = False
+        self.links[exclude].active = False
+
+        # collect current source IDs
+        curr_source_id = curr_l.list_name
+        # curr_source_id = curr_l.full_spec['source']['id']
+        target_source_id = self.links[exclude].list_name
+        # print("hurr")
+        # print(curr_source_id, target_source_id)
+
+        # build a buffer
+        working_buffer = self.source_history[curr_source_id]
+        # target_buffer = self.source_history[target_source_id]
+
+        # forge a loop
+        self.iter_buffer_loop_storage[target_source_id] = task.LoopingCall(self._iterate_buffer,
+                                                                           target_source_id,
+                                                                           working_buffer,
+                                                                           exclude,
+                                                                           )
+        # loop.kw.update({"loop": loop, "enable": exclude})  # oh yes.
+        self.iter_buffer_timeout[target_source_id] = datetime.datetime.now() + datetime.timedelta(seconds=5)
+        self.iter_buffer_loop_storage[target_source_id].start(0)
+
+        # while working_buffer != target_source_id:
+        #     # rewrite the target
+        #     target_buffer = yield self._get_source_history(target_source_id)
+        #     print(target_buffer)
+        #     # step toward it
+        #     working_buffer = self._do_naive_stepping_between_buffers(working_buffer, target_buffer)
+        #
+        #     yield self.publish(target, working_buffer, id='inter')
+
+        # self.links[exclude].active = True
+
         # set all active to False
         # collect the current state of a given link
         # collect the current state of the one to be active
@@ -160,10 +299,13 @@ class LinkManager(ApplicationSession):
         # set active to True
 
     def _do_disable(self, link_id):
-        self.links[link_id]['active'] = False
+        self.links[link_id].active = False
 
         # TODO: Add a little hook in here that sends out a fadeout of current program to standby pattern
         # collect the current state of the given link
+        # target = self.link_tgt_map[link_id]
+        # last_state = self.source_history[target]
+        # last_state = self.sou
         # mark link inactive
         # build a fade buffer from the existing buffer
         # pass pattern to link target
@@ -182,14 +324,19 @@ class LinkManager(ApplicationSession):
         list_name = link_spec['source']['listname']
         target_id = link_spec['target']['id']
         source_id = link_spec['source']['id']
-        self._do_toggle(link_spec['target']['id'], exclude=list_name)
-        self.links[link_name] = {"name": link_name, "active": True, "list_name": list_name, "full_spec": link_spec}
+        self.links[link_name] = Link(name=link_name, active=True, list_name=list_name, full_spec=link_spec)
+        self.link_tgt_map[link_name] = target_id
+        self.link_name_to_source[link_name] = list_name
         self.link_subs[link_name] = yield self.subscribe(self.pass_link, topic=source_id,
                                                          options=SubscribeOptions(details_arg="details",
                                                                                   correlation_id=link_name,
                                                                                   correlation_is_anchor=True))
-        self.link_tgt_map[link_name] = target_id
-        self.link_name_to_source[link_name] = list_name
+
+        self._do_toggle(link_spec['target']['id'], exclude=link_name)
+        # self.links[link_name] = Link(name=link_name, active=True, list_name=list_name, full_spec=link_spec)
+        # self.links[link_name] = {"name": link_name, "active": True, "list_name": list_name, "full_spec": link_spec}
+
+
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name):
@@ -207,7 +354,7 @@ class LinkManager(ApplicationSession):
 
     @wamp.register("com.lambentri.edge.la4.links.destroy")
     def destroy_link(self, link_name):
-        list_name = self.links[link_name]['name']
+        list_name = self.links[link_name].name
         print(list_name)
         print(link_name)
         self.link_subs[link_name].unsubscribe()
