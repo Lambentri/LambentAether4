@@ -116,7 +116,7 @@ class SimpleColorChaser(DefaultStep):
     desc = "color that chases itself"
     grps = ['chase', 'solids']
     name = "Simple CC"
-    speed = TickEnum.FHUNDREDTHS
+    speed = TickEnum.TENTHS
     running = RunningEnum.RUNNING
 
     class meta:
@@ -160,7 +160,7 @@ class MultiColorChaser(DefaultStep):
     desc = "multi color that chases itself"
     grps = ['chase', 'solids', 'multi', 'space']
     name = "Multi CC"
-    speed = TickEnum.FHUNDREDTHS
+    speed = TickEnum.TENTHS
     running = RunningEnum.RUNNING
 
     class meta:
@@ -206,7 +206,7 @@ class MultiNoSpaceChaser(DefaultStep):
     desc = "multi color that chases itself with no spaces"
     grps = ['chase', 'solids', 'multi', 'nospace']
     name = "Multi CC"
-    speed = TickEnum.FHUNDREDTHS
+    speed = TickEnum.TENTHS
     running = RunningEnum.RUNNING
 
     class meta:

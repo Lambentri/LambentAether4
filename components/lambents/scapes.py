@@ -55,7 +55,7 @@ class BounceScape(DefaultStep):
     desc = "bouncing hue ranges yo"
     grps = ['bounce', 'multi']
     name = "Bounce"
-    speed = TickEnum.HUNDREDTHS
+    speed = TickEnum.TENTHS
     running = RunningEnum.RUNNING
 
 

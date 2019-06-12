@@ -1,0 +1,159 @@
+machines:
+  - name: StaticWarmW
+    cls: "SolidStep"
+    kwargs: {"color":[255, 255, 190]}
+
+  - name: StaticH4x
+    cls: "SolidStep"
+    kwargs: {"color":[0, 102, 202]}
+
+  - name: StaticRuby
+    cls: "SolidStep"
+    kwargs: {"color":[155, 17, 30]}
+
+  - name: StaticEmerald
+    cls: "SolidStep"
+    kwargs: {"color":[4, 93, 28]}
+
+  - name: StaticGold
+    cls: "SolidStep"
+    kwargs: {"color":[255, 215, 0]}
+
+  - name: StaticCafe
+    cls: "SolidStep"
+    kwargs: {"color":[117, 86, 56]}
+
+  - name: StaticOrange
+    cls: "SolidStep"
+    kwargs: {"color":[255, 204, 16]}
+
+  - name: StaticPlum
+    cls: "SolidStep"
+    kwargs: {"color":[122, 14, 255]}
+
+  - name: StaticGuava
+    cls: "SolidStep"
+    kwargs: {"color":[240, 122, 238]}
+
+  - name: StaticLime
+    cls: "SolidStep"
+    kwargs: {"color":[8, 255, 107]}
+
+  - name: StaticLemon
+    cls: "SolidStep"
+    kwargs: {"color":[243, 255, 7]}
+
+  - name: SCCBlue
+    cls: "SimpleColorChaser"
+    kwargs: {"h":128}
+
+  - name: SCCRed
+    cls: "SimpleColorChaser"
+    kwargs: {"h":0}
+
+  - name: SCCYellow
+    cls: "SimpleColorChaser"
+    kwargs: {"h":42}
+
+  - name: SCCGreen
+    cls: "SimpleColorChaser"
+    kwargs: {"h":84}
+
+  - name: SCCPurple
+    cls: "SimpleColorChaser"
+    kwargs: {"h":170}
+
+  - name: SCCPink
+    cls: "SimpleColorChaser"
+    kwargs: {"h":212}
+
+  - name: MCCRedBlue
+    cls: "MultiColorChaser"
+    kwargs: {"h":[0, 128]}
+
+  - name: MCCGreenPurp
+    cls: "MultiColorChaser"
+    kwargs: {"h":[64, 192]}
+
+  - name: MCCM4
+    cls: "MultiColorChaser"
+    kwargs: {"h":[0, 64, 128, 192], "spacing":10, "fadeby":5}
+
+  - name: MCCM8
+    cls: "MultiColorChaser"
+    kwargs: {"h":[0, 32, 64, 96, 128, 160, 192, 224], "spacing":6, "fadeby":3}
+
+  - name: MCCRedBlueNS
+    cls: "MultiNoSpaceChaser"
+    kwargs: {"h":[0, 128]}
+
+  - name: MCCGreenPurpNS
+    cls: "MultiNoSpaceChaser"
+    kwargs: {"h":[64, 192]}
+
+  - name: MCCM4NS
+    cls: "MultiNoSpaceChaser"
+    kwargs: {"h":[0, 64, 128, 192], "spacing":10}
+
+  - name: MCCM8NS
+    cls: "MultiNoSpaceChaser"
+    kwargs: {"h":[0, 32, 64, 96, 128, 160, 192, 224], "spacing":6}
+
+  - name: RainbowChaser
+    cls: "RainbowChaser"
+    kwargs: {}
+
+  - name: RainbowChaser64
+    cls: "RainbowChaser"
+    kwargs: {"stepsize":4}
+
+  - name: BouncyVista
+    cls: "BounceScape"
+    kwargs: {h:[240,120]}
+
+  - name: BouncyLove
+    cls: "BounceScape"
+    kwargs: {h:[230,20]}
+
+  - name: BouncyOcean
+    cls: "BounceScape"
+    kwargs: {h:[90,160]}
+
+  - name: BouncyForest
+    cls: "BounceScape"
+    kwargs: {h:[60,90]}
+
+  - name: BouncyRoyal
+    cls: "BounceScape"
+    kwargs: {h:[190,210]}
+
+  - name: BouncySunny
+    cls: "BounceScape"
+    kwargs: {h:[34,42]}
+
+  - name: BouncyNight
+    cls: "BounceScape"
+    kwargs: {h:[245,10]}
+
+  - name: SRVaporWave
+    cls: "SolidRocker"
+    kwargs: {"h":[136,245]}
+
+  - name: CRVaporWave
+    cls: "ChasingRocker"
+    kwargs: {"h":[245,136]}
+
+  - name: SRRGB
+    cls: "SolidRocker"
+    kwargs: {"h":[0,85,171], "l":10}
+
+  - name: SRCYM
+    cls: "SolidRocker"
+    kwargs: {"h":[42,127,212], "l": 10}
+
+  - name: SRCYMRGB
+    cls: "SolidRocker"
+    kwargs: {"h":[0,42,85,127,171,212], "l": 10}
+
+#links:
+#  autoform: true

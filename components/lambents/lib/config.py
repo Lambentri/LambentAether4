@@ -149,3 +149,21 @@ class IntegerConfig(ConfigClass):
 
 class StringConfig(ConfigClass):
     pass
+
+class BooleanConfig(ConfigClass):
+    def __init__(self, default=True, titles="BooleanConfig"):
+        self.default = default
+        self.field_titles = titles
+
+    def serialize(self): # something like this
+        return {
+            "name": "BooleanConfig",
+            "field_titles": [self.field_titles],
+            "field_validation": {},
+            "field_default": self.default or True
+        }
+
+    def validate(self, inputdata):
+        if inputdata not in [True, False]:
+            raise ConfigException(f"Boolean Configured with something that ain't a boolean")
+        return inputdata

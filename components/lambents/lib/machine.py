@@ -132,6 +132,8 @@ class LambentMachine(ApplicationSession):
         "lambents.chasers.MultiNoSpaceChaser",
         "lambents.rainbows.RainbowChaser",
         "lambents.scapes.BounceScape",
+        "lambents.rocker.SolidRocker",
+        "lambents.rocker.ChasingRocker",
     ]
 
     def _handle_loading_config_from_file(self, path):
