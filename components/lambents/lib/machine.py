@@ -15,6 +15,9 @@ from twisted.internet import task
 from twisted.internet.defer import inlineCallbacks
 from yaml import load, Loader, YAMLError
 
+from components.lambents.lib.decor import docupub
+from components.lambents.lib.mixins import DocMixin
+
 
 class TickEnum(Enum):
     HUNDREDTHS = .01
@@ -57,6 +60,7 @@ class RunningEnum(Enum):
 
 class MachineLoadException(Exception):
     pass
+
 
 # serialization
 class ComposableDict(fields.Dict):
@@ -115,7 +119,11 @@ class FastFakeMachine(FakeMachine):
     id = "FakeXFakeFast"
 
 
-class LambentMachine(ApplicationSession):
+class LambentMachine(DocMixin, ApplicationSession):
+    regs = {}
+    subs = {}
+    grp = "machine"
+
     tickers = {}
     machines = {
         "SlowFakeMachine-a.b": SlowFakeMachine(),
@@ -209,8 +217,12 @@ class LambentMachine(ApplicationSession):
 
         print("alll timers initd")
 
+    @docupub(topics=["com.lambentri.edge.la4.machine.link.src."], shapes={"com.lambentri.edge.la4.machine.link.src.": {
+        "args.res": ["int*450+"], "id": "str"
+    }})
     @inlineCallbacks
     def do_tick(self, enum: TickEnum):
+        """A function that gets called hundreds of times per second. Depending on the TickEnum may emit stuff"""
         if not self.is_connected():
             print("TICK, not connected, passings")
             return
@@ -220,7 +232,6 @@ class LambentMachine(ApplicationSession):
             self.machines.values())
         # print(operating_machines)
         for mach in operating_machines:
-
             res = mach.step()
             # print(mach.speed.value == TickEnum.TENS.value)
             # if mach.speed.value == TickEnum.TENS.value:
@@ -254,19 +265,22 @@ class LambentMachine(ApplicationSession):
             raise MachineLoadException(f"Unable to locate a lighting class named '{name}'")
 
     @wamp.register("com.lambentri.edge.la4.machine.tick_up")
-    def machine_tick_up(self, machine_name):
+    def machine_tick_up(self, machine_name: str):
+        """Ticks up a machine's tick index (slower)"""
         mach = self.machines.get(machine_name)
         mach.speed = mach.speed.next_up(mach.speed)
         return {"speed": mach.speed.name}
 
     @wamp.register("com.lambentri.edge.la4.machine.tick_dn")
-    def machine_tick_dn(self, machine_name):
+    def machine_tick_dn(self, machine_name: str):
+        """Ticks down a machine's tick indes (faster)"""
         mach = self.machines.get(machine_name)
         mach.speed = mach.speed.next_dn(mach.speed)
         return {"speed": mach.speed.name}
 
     @wamp.register("com.lambentri.edge.la4.machine.library")
     def machine_library_retrieve(self):
+        """Lists available machine templates in the library"""
         machine_ret = {}
         for item in self.machine_library:
             if isinstance(item, str):
@@ -302,7 +316,8 @@ class LambentMachine(ApplicationSession):
 
     # @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.machine.init")
-    def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs={}, direct=False):
+    def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs: dict, direct: bool=False):
+        """Starts a machine. NOTE passing in the same machine_name will overwrite whatever was there. This can be leveraged to edit machine details!!"""
         # this is called on startup as well as when adding new configs
         # startup uses direct=True, since we're not trying to de-chunk our chunked frontend UI
         # print(machine_cls)
@@ -323,10 +338,9 @@ class LambentMachine(ApplicationSession):
             built_kwargs = machine_kwargs
 
         if hasattr(cls.meta, "state_status"):
-            set_status=cls.meta.state_status
+            set_status = cls.meta.state_status
         else:
             set_status = False
-
 
         id = f"{cls.__name__}-x-{machine_name}"
         mach = cls(config_params=built_kwargs, set_status=set_status)
@@ -340,13 +354,14 @@ class LambentMachine(ApplicationSession):
         res = self.machines[id].step()
         # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
 
-    @wamp.register("com.lambentri.edge.la4.machine.edit")
-    def modify_machine_instance(self):
-        # this allows you to change execution parameters on a machine and restart it
-        pass
+    # @wamp.register("com.lambentri.edge.la4.machine.edit")
+    # def modify_machine_instance(self):
+    #     # this allows you to change execution parameters on a machine and restart it
+    #     pass
 
     @wamp.register("com.lambentri.edge.la4.machine.pause")
-    def pause_machine(self, machine_name):
+    def pause_machine(self, machine_name: str):
+        """ Toggles a machine's RunningEnum"""
         mach = self.machines.get(machine_name)
         if mach.running == RunningEnum.RUNNING:
             mach.running = RunningEnum.NOTRUNNING
@@ -355,7 +370,8 @@ class LambentMachine(ApplicationSession):
         return {"running": mach.running.name}
 
     @wamp.register("com.lambentri.edge.la4.machine.rm")
-    def destroy_machine(self, machine_name):
+    def destroy_machine(self, machine_name: str):
+        """Deletes a machine instance"""
         try:
             del self.machines[machine_name]
         except:
@@ -369,25 +385,19 @@ class LambentMachine(ApplicationSession):
     # pass
     @wamp.register("com.lambentri.edge.la4.machine.list")
     def list_active_machine_instances(self):
+        """List all available machines"""
         schema = MachineDictSerializer()
         # print(self.machines)
         serialized = schema.dump(
             {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
         return serialized.data
 
-    # links
-    @wamp.register("com.lambentri.edge.la4.manifold.create")
-    def manifold_create(self):
-        """Creates a manifold to route and combine various sources / links / devices via virtual manifolds"""
-        pass
-
+    @inlineCallbacks
     def onJoin(self, details):
         print("joined")
-        self.register(self)
-
-    @wamp.register("com.lambentri.edge.la4.links.list")
-    def list_links(self):
-        pass
+        self.regs = yield self.register(self)
+        self.subs = yield self.subscribe(self)
+        self.document()
 
 
 if __name__ == '__main__':

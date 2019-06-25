@@ -143,6 +143,10 @@ machines:
     cls: "ChasingRocker"
     kwargs: {"h":[245,136]}
 
+  - name: SRPinkPurple
+    cls: "SolidRocker"
+    kwargs: {"h":[205,245]}
+
   - name: SRRGB
     cls: "SolidRocker"
     kwargs: {"h":[0,85,171], "l":10}

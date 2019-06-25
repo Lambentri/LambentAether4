@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href='//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons' rel="stylesheet">
+    <link href="//cdn.materialdesignicons.com/2.8.94/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="//cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale==1, user-scalable=no, minimal-ui">
+    <meta charset="utf-8"/>
+  </head>
+  <body>
+    <div id="app">
+      <v-app id="docs" dark>
+        <v-navigation-drawer
+                v-model="drawer"
+                permanent
+                mini-variant
+                absolute
+                overflow
+                app
+        >
+          <v-list dense class="pt-0">
+            <v-list-tile>
+              <v-list-tile-action>
+                <a href="index.html">
+                  <v-icon>apps</v-icon>
+                </a>
+              </v-list-tile-action>
+            </v-list-tile>
+            <v-list-tile
+                    v-for="item in items"
+                    :key="item.title"
+                    @click=""
+            >
+              <v-list-tile-action>
+                <v-icon>{{ item.icon }}</v-icon>
+              </v-list-tile-action>
+
+              <v-list-tile-content>
+                <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+        </v-navigation-drawer>
+        <v-content>
+          <v-container fluid>
+            <v-layout align-center justify-center>
+              <v-flex xs10>
+                <v-card>
+                  <v-card-text>
+                    <v-layout row wrap>
+                      <h1>LA4 Docs</h1>
+                    </v-layout>
+                    <v-layout row>
+                      <h2>Terminology</h2>
+                    </v-layout>
+                    <v-layout row>
+                      <v-flex xs12>
+                        <v-card light>
+                          <v-list three-line>
+                            <template>
+                              <v-list-tile
+                                      v-for="(item, index) in components"
+                                      :key="item.header"
+                                      @click=""
+                              >
+                                <v-list-tile-action>
+                                  <v-icon x-large :color="color_map[item.grp]">{{ grp_icons[item.grp] }}</v-icon>
+                                </v-list-tile-action>
+                                <v-list-tile-content>
+                                  <v-list-tile-title v-html="item.header"></v-list-tile-title>
+                                  <v-list-tile-sub-title v-html="item.desc"></v-list-tile-sub-title>
+                                </v-list-tile-content>
+                              </v-list-tile>
+                            </template>
+                          </v-list>
+                        </v-card>
+                      </v-flex>
+                    </v-layout>
+                    <v-layout row>
+                      <v-flex xs12>
+                        <v-card light>
+                          <v-card-text>
+                            <v-item-group>
+                              <v-container fluid grid-list-md>
+                                <v-layout>
+                                  <v-flex xs12 md4 v-for="(item, key) in terms" :key="key">
+                                    <v-item>
+                                      <v-card
+                                              slot-scope="{ active, toggle }"
+                                              :color="active ? 'red' : ''"
+                                              class="d-flex align-center"
+                                              light
+                                              @click="toggle"
+                                              height="100"
+                                              flat
+                                      >
+                                        <v-card-title>
+                                          <h4><v-icon slot="activator">{{ type_icons[item.type] }}</v-icon>{{ key }}</h4>
+                                        </v-card-title>
+                                        <v-card-text class="headline font-weight-bold">
+                                          {{ item.desc }}
+                                        </v-card-text>
+                                      </v-card>
+                                    </v-item>
+                                  </v-flex>
+                                </v-layout>
+                              </v-container>
+                            </v-item-group>
+                          </v-card-text>
+                        </v-card>
+                      </v-flex>
+                    </v-layout>
+                    <v-layout row wrap>
+                      <h2>Topic Library</h2>
+                    </v-layout>
+                    <v-layout row wrap>
+                      <v-flex xs12>
+                        <v-expansion-panel light>
+                          <v-expansion-panel-content
+                                  v-for="(item, k) in docs"
+                                  :key="k"
+                          >
+                            <template slot="header">
+                              <div>
+                                <v-tooltip bottom>
+                                  <template v-slot:activator="{ on }">
+                                    <v-icon slot="activator">{{ type_icons[item.type] }}</v-icon>
+                                  </template>
+                                  <span>{{item.type}}</span>
+                                </v-tooltip>
+                                <v-tooltip bottom>
+                                  <template v-slot:activator="{ on }">
+                                    <v-icon slot="activator" :color="color_map[item.grp]">{{ grp_icons[item.grp] }}
+                                    </v-icon>
+                                  </template>
+                                  <span>{{item.grp}}</span>
+                                </v-tooltip>
+                                {{ k }}
+                              </div>
+                            </template>
+                            <v-card>
+                              <v-card-title>
+                                <v-chip :color="color_map[item.grp]" text-color="white">
+                                  <v-avatar>
+                                    <v-icon>{{ grp_icons[item.grp] }}</v-icon>
+                                  </v-avatar>
+                                  {{ item.grp }}
+                                  <v-icon>arrow_right_alt</v-icon>
+                                  {{ item.type }}
+                                  <v-icon right>{{ type_icons[item.type]}}</v-icon>
+                                </v-chip>
+                                <v-chip color="purple" text-color="white">
+                                  <v-avatar>
+                                    <v-icon>alternate_email</v-icon>
+                                  </v-avatar>
+                                  {{ k }}
+                                </v-chip>
+                              </v-card-title>
+                              <v-card-text>
+                                <v-item-group>
+                                  <v-container grid-list-md>
+                                    <v-layout wrap>
+                                      <v-flex xs12 md4>
+                                        <v-item>
+                                          <v-card
+                                                  slot-scope="{ active, toggle }"
+                                                  :color="active ? 'purple' : ''"
+                                                  class="d-flex align-center"
+                                                  dark
+                                                  height="240"
+                                                  @click="toggle"
+                                          >
+                                            <v-card-title>
+                                              <v-icon slot="activator">info</v-icon><h4>Info</h4>
+                                            </v-card-title>
+                                            <v-card-text class="headline font-weight-bold">
+                                              {{ item.doc }}
+                                            </v-card-text>
+                                          </v-card>
+                                        </v-item>
+                                      </v-flex>
+                                      <v-flex xs12 md4>
+                                        <v-item>
+                                          <v-card
+                                                  slot-scope="{ active, toggle }"
+                                                  :color="active ? 'purple' : ''"
+                                                  class="d-flex align-center"
+                                                  dark
+                                                  height="240"
+                                                  @click="toggle"
+                                          >
+                                            <v-card-title>
+                                              <v-icon slot="activator">details</v-icon><h4>Arguments</h4>
+                                            </v-card-title>
+                                            <v-card-text class="headline font-weight-bold">
+                                              <code>{{ item.schema.kwargs }}</code>
+                                            </v-card-text>
+                                          </v-card>
+                                        </v-item>
+                                      </v-flex>
+                                      <v-flex xs12 md4>
+                                        <v-item>
+                                          <v-card
+                                                  slot-scope="{ active, toggle }"
+                                                  :color="active ? 'purple' : ''"
+                                                  class="d-flex align-center"
+                                                  dark
+                                                  height="240"
+                                                  @click="toggle"
+                                          >
+                                            <v-card-title>
+                                              <v-icon slot="activator">keyboard_return</v-icon><h4>Return Values</h4>
+                                            </v-card-title>
+                                            <v-card-text class="headline font-weight-bold">
+                                              <code>{{ item.schema.return }}</code>
+                                            </v-card-text>
+                                          </v-card>
+                                        </v-item>
+                                      </v-flex>
+                                    </v-layout>
+                                  </v-container>
+                                </v-item-group>
+                                <br/>
+                                -- TESTER GOES HERE --
+                              </v-card-text>
+                            </v-card>
+                          </v-expansion-panel-content>
+                        </v-expansion-panel>
+                      </v-flex>
+                    </v-layout>
+                  </v-card-text>
+                </v-card>
+              </v-flex>
+            </v-layout>
+          </v-container>
+        </v-content>
+      </v-app>
+    </div>
+    <script src="//cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/vuetify@1.5.14/dist/vuetify.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/vuex/2.3.1/vuex.min.js"></script>
+    <script src="/js/autobahn.min.js"></script>
+    <script src="/js/vue.wamp.js"></script>
+    <script>
+        Vue.use(VueWamp, {
+            debug: true,
+            //    url: 'wss://the.thingcosm.us/ws',
+            url: 'ws://127.0.0.1:8080/ws',
+            // url: (document.location.origin == "file://") ? "ws://127.0.0.1:8080/ws" : (document.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws",
+            realm: 'realm1',
+            onopen: function onopen(session, details) {
+                console.log('WAMP connected', session, details);
+
+                session.subscribe("com.lambentri.edge.la4.doc.pub", function (args, kwargs, details) {
+                    console.log(kwargs)
+                    window.vueapp.$data.docs = kwargs.docs;
+                }).then(function (s) {
+                    console.log('AutobahnJS Subscription object: ', s);
+                });
+
+                session.subscribe("com.lambentri.edge.la4.doc.com", function (args, kwargs, details) {
+                    console.log(kwargs)
+                    window.vueapp.$data.components = kwargs.components;
+                    window.vueapp.$data.terms = kwargs.terms;
+                }).then(function (s) {
+                    console.log('AutobahnJS Subscription object: ', s);
+                });
+
+//                function update_boxes() {
+//                    session.call('us.thingcosm.animate.boxes', [], {"count": window.vueapp.$data.boxcnt}).then(
+//                        function (res) {
+//                            console.log("LITTLE BOXES");
+//                            console.log(res);
+//                            window.vueapp.$data.boxes = res.data
+//                        },
+//                        function (err) {
+//                            console.log(err);
+//                        }
+//                    )
+//                }
+
+
+            },
+            onclose: function onclose(reason, details) {
+                console.log('WAMP closed: ' + reason, details);
+            }
+        });
+        var app = new Vue({
+            el: '#app',
+            data: {
+                drawer: true,
+                docs: {},
+                components: {},
+                terms: {},
+                items: [
+                    // {title: 'Home', icon: 'dashboard'},
+                    // {title: 'About', icon: 'question_answer'}
+                ],
+
+                type_icons: {
+                    "pub": "announcement",
+                    "sink": "filter_list",
+                    "call": "call_made"
+                },
+
+                grp_icons: {
+                    "machine": "settings_remote",
+                    "links": "settings_input_component",
+                    "sinks": "weekend",
+                    "helpers": "supervisor_account"
+                },
+
+                color_map: {
+                    "machine": "orange",
+                    "links": "blue",
+                    "sinks": "purple",
+                    "helpers": "green"
+                },
+            },
+            methods: {
+                exec: function (key) {
+                    console.log("up" + key)
+                    Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_up", [], {"machine_name": key}).then(
+                        function (res) {
+                            console.log(res.speed)
+                        },
+                        function (err) {
+                            console.log(err)
+                        }
+                    )
+                }
+            },
+            computed: {
+                // machine_library_as_list: function () {
+                //     return Object.values(this.machine_library)
+                // },
+                //
+                // machines_as_list: function () {
+                //     return Object.values(this.machines)
+                // },
+
+                // todo add combined lambents/named sources and devices/named sinks
+            },
+            watch: {}
+        })
+
+
+        window.vueapp = app;
+        Vue.Wamp.open();
+        console.log(Vue.Wamp.conn);
+    </script>
+  </body>
+</html>

@@ -11,6 +11,8 @@ from copy import deepcopy
 from twisted.internet import task, reactor
 from twisted.internet.defer import inlineCallbacks
 
+from components.lambents.lib.decor import docupub
+from components.lambents.lib.mixins import DocMixin
 from components.library import chunks
 
 LINK_PREFIX = "com.lambentri.edge.la4.machine.link"
@@ -30,7 +32,7 @@ class Link:
         return {"name": self.name, "active": self.active, "list_name": self.list_name, "full_spec": self.full_spec}
 
 
-class LinkManager(ApplicationSession):
+class LinkManager(DocMixin, ApplicationSession):
     sources = {}
     sources_lseen = {}
     sinks = {}
@@ -49,13 +51,19 @@ class LinkManager(ApplicationSession):
 
     do_fade_between = True
 
+    regs = {}
+    subs = {}
+    grp = "links"
+
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
 
+    @inlineCallbacks
     def onJoin(self, details):
         print("joined")
-        self.register(self)
-        self.subscribe(self)
+        self.regs = yield self.register(self)
+        self.subs = yield self.subscribe(self)
+        self.document()
 
         self.ticker_herald = task.LoopingCall(self.link_herald)
         self.ticker_herald.start(self.HERALD_TICKS)
@@ -66,7 +74,6 @@ class LinkManager(ApplicationSession):
         # print(details)
         """
         notices a link being created and stores the last-seen etc, for UI purposes
-        :return: 
         """
         split_topic = details.topic.split(LINK_PREFIX_)[1]
         src_class, src_topic = split_topic.split('.', 1)
@@ -79,6 +86,9 @@ class LinkManager(ApplicationSession):
 
     @wamp.subscribe(SINK_PREFIX, options=SubscribeOptions(match="prefix", details_arg="details"))
     def sink_noticer(self, res, details):
+        """
+        Notices a sink announcing itself
+        """
         split_topic = details.topic.split(SINK_PREFIX_)[1]
         # print("NOTICED!!")
         # print(split_topic)
@@ -115,8 +125,10 @@ class LinkManager(ApplicationSession):
         minutes, seconds = divmod(r_h, 60)
         return f"{hours}H.{minutes}.M.{seconds}."
 
+    @docupub(topics=["com.lambentri.edge.la4.links"], shapes={"com.lambentri.edge.la4.links": {"links":{}, "sinks":[]}})
     @inlineCallbacks
     def link_herald(self):
+        """Announces links/sinks at a tick of .5s"""
         built_srcs = []
         for src, topic in self.sources.values():
             # if src not in built:
@@ -138,6 +150,7 @@ class LinkManager(ApplicationSession):
                 to_pass_to.append(k)
         return to_pass_to
 
+    # TODO figure out how2 docupub this
     @inlineCallbacks
     def pass_link(self, *args, **kwargs):
         src_id = kwargs.get('id')
@@ -339,21 +352,22 @@ class LinkManager(ApplicationSession):
 
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
-    def toggle_link(self, link_name):
-        print("TOGGLE")
+    def toggle_link(self, link_name: str):
         """Toggles a link on, will disable all others that are pointing to a given device / src"""
+        print("TOGGLE")
         print(link_name)
         target = self.link_tgt_map[link_name]
         self._do_toggle(target, exclude=link_name)
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
-    def disable_link(self, link_name):
-        print("DISABLE")
+    def disable_link(self, link_name: str):
         """Disables a link (more or less the same as toggling, but to turn off the lights?"""
+        print("DISABLE")
         self._do_disable(link_name)
 
     @wamp.register("com.lambentri.edge.la4.links.destroy")
-    def destroy_link(self, link_name):
+    def destroy_link(self, link_name: str):
+        """Destroys a link by removing it from the link struct"""
         list_name = self.links[link_name].name
         print(list_name)
         print(link_name)

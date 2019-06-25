@@ -11,12 +11,18 @@ import os
 import socket
 import sys
 
+from components.lambents.lib.decor import docupub
+from components.lambents.lib.mixins import DocMixin
 from components.library import chunks
 
 
-class ZeroConfSession(ApplicationSession):
-    current_items = {}
+class ZeroConfSession(DocMixin, ApplicationSession):
+    regs = {}
     subs = {}
+    grp = "sinks"
+
+    current_items = {}
+    zsubs = {}
     port = 7777
 
     HERALD_TICKS = .5
@@ -37,9 +43,12 @@ class ZeroConfSession(ApplicationSession):
     def onChallenge(self, challenge):
         print("authentication challenge received")
 
+    @inlineCallbacks
     def onJoin(self, details):
         print("session joined")
-        self.register(self)
+        self.regs = yield self.register(self)
+        self.subs = yield self.subscribe(self)
+        self.document()
 
         self.ticker_herald = task.LoopingCall(self.device_herald)
         self.ticker_herald.start(self.HERALD_TICKS)
@@ -54,19 +63,25 @@ class ZeroConfSession(ApplicationSession):
     def onDisconnect(self):
         print("transport disconnected")
 
+    @docupub(topics=["com.lambentri.edge.la4.machine.sink.8266-7777"], shapes={
+        "com.lambentri.edge.la4.machine.sink.8266-7777": [{"iname": "str", "id": "topicstr", "name": "str"}]})
     @inlineCallbacks
     def device_herald(self):
+        """Announces found devices every half second"""
         built = []
-        for k,v in self.current_items.items():
-            built.append({"iname":v['iname'], "id":f"com.lambentri.edge.la4.device.82667777.{k}", "name":v.get('nname', v['name'].split('.',1)[0])})
+        for k, v in self.current_items.items():
+            built.append({"iname": v['iname'], "id": f"com.lambentri.edge.la4.device.82667777.{k}",
+                          "name": v.get('nname', v['name'].split('.', 1)[0])})
         yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
 
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
+        """List all found devices"""
         return {"devices": self.current_items}
 
     @wamp.register("com.lambentri.edge.la4.device.82667777.name")
-    def set_name(self, shortname, nicename):
+    def set_name(self, shortname: str, nicename: str):
+        """Set a device's display name property """
         self.current_items[shortname]['nname'] = nicename
 
     # zeroconf methods
@@ -79,10 +94,11 @@ class ZeroConfSession(ApplicationSession):
         print("Service %s added, service info: %s, %s" % (name, info, type))
         print(socket.inet_ntoa(info.address))
         name_p = name.split('.', 1)[0]
-        self.current_items[name_p] = {"address": socket.inet_ntoa(info.address), "name": name_p, "iname": name, "port": info.port}
-        self.subs[name_p] = self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{name_p}",
-                                           options=SubscribeOptions(details_arg="details", correlation_id=name))
-        print(self.subs)
+        self.current_items[name_p] = {"address": socket.inet_ntoa(info.address), "name": name_p, "iname": name,
+                                      "port": info.port}
+        self.zsubs[name_p] = self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{name_p}",
+                                            options=SubscribeOptions(details_arg="details", correlation_id=name))
+        print(self.zsubs)
 
     # udp methods
     def udp_send(self, message, details, id=None):
