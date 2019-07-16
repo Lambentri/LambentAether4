@@ -89,6 +89,7 @@ class ZeroConfSession(DocMixin, ApplicationSession):
         print("Service %s removed" % (name,))
         del self.current_items[name]
 
+    @inlineCallbacks
     def add_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
         print("Service %s added, service info: %s, %s" % (name, info, type))
@@ -96,7 +97,7 @@ class ZeroConfSession(DocMixin, ApplicationSession):
         name_p = name.split('.', 1)[0]
         self.current_items[name_p] = {"address": socket.inet_ntoa(info.address), "name": name_p, "iname": name,
                                       "port": info.port}
-        self.zsubs[name_p] = self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{name_p}",
+        self.zsubs[name_p] = yield self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{name_p}",
                                             options=SubscribeOptions(details_arg="details", correlation_id=name))
         print(self.zsubs)
 

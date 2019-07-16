@@ -593,8 +593,8 @@
             Vue.use(VueWamp, {
                 debug: true,
                 //    url: 'wss://the.thingcosm.us/ws',
-                url: 'ws://127.0.0.1:8080/ws',
-                // url: (document.location.origin == "file://") ? "ws://127.0.0.1:8080/ws" : (document.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws",
+                // url: 'ws://127.0.0.1:8080/ws',
+                url: (document.location.origin == "file://") ? "ws://127.0.0.1:8080/ws" : (document.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws",
                 realm: 'realm1',
                 onopen: function onopen(session, details) {
                     console.log('WAMP connected', session, details);
