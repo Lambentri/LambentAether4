@@ -8,9 +8,20 @@ so avahi_8266.py, links.py, machine.py, helpers.py
 
 visit localhost:8080 to drive the UI
 
-# Prod
+# Building
 
-TODO::: setup a crossbar config.json to run all the above components in-router
+This will build the container with all the components in router [details](https://crossbar.io/docs/Container-Configuration/)
+
+`docker build -t la4 -f Dockerfile-all . `
+
+If you'd like to run the router in docker but develop against it, the command below will do so without any of the components
+
+`docker build -t la4-dev -f Dockerfile . `
+
+
+# Running
+
+Port 8080 needs to be exposed on the container and avahi needs to be able to access the actual network, so run `docker run --net=host -p 8080:8080 la4`
 
 # Env Vars
 
