@@ -176,19 +176,22 @@ class LambentMachine(DocMixin, ApplicationSession):
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
         txaio.start_logging()
+        
+        
 
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--config", help="A config file to read from")
-        args = parser.parse_args()
-
-        if args.config:
-            self.log.info("config file: passed in via args @ %s" % args.config)
-            self._handle_loading_config_from_file(args.config)
-
-        elif os.environ.get("LA4_CONFIG_PATH"):
+        if os.environ.get("LA4_CONFIG_PATH"):
             path = os.environ.get("LA4_CONFIG_PATH")
             self.log.info("config file: specified in environ @ %s" % path)
             self._handle_loading_config_from_file(path)
+            
+        else:
+            parser = argparse.ArgumentParser()
+            parser.add_argument("--config", help="A config file to read from")
+            args = parser.parse_args()
+            self.log.info("config file: passed in via args @ %s" % args.config)
+            self._handle_loading_config_from_file(args.config)
+
+
 
         # pull built-in machines from a config file if specified
 
