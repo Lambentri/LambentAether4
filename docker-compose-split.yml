@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  xbar:
+    build: .
+    ports:
+      - "8080:8080"
+    entrypoint: crossbar start --cbdir /node/.crossbar --config /node/.crossbar/config.all.json
+    network_mode: "host"

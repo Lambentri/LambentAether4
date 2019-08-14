@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  xbar:
+    build: .
+    ports:
+      - "8080:8080"
+    entrypoint: crossbar start --cbdir /node/.crossbar --config /node/.crossbar/config.all.json
+    network_mode: "host"
+  helper:
+    build: .
+    entrypoint: pypy3 /node/components/lambents/lib/helpers.py
+    working_dir: /node/components
+    restart: on-failure
+    depends_on:
+      - xbar
+    environment:
+      - PYTHONPATH=/node
+      - XBAR_ROUTER=ws://xbar:8080/ws
+#  avahi_8266:
+#    build: .
+#    entrypoint: pypy3 /node/components/avahi_8266.py
+#    working_dir: /node/components
+#    restart: on-failure
+#    network_mode: "host"
+#    depends_on:
+#      - xbar
+#    environment:
+#      - PYTHONPATH=/node
+#      - XBAR_ROUTER=ws://xbar:8080/ws
+  machine:
+    build: .
+    entrypoint: pypy3 /node/components/lambents/lib/machine.py
+    working_dir: /node/components
+    restart: on-failure
+    depends_on:
+      - xbar
+    environment:
+      - PYTHONPATH=/node
+      - XBAR_ROUTER=ws://xbar:8080/ws
+      - LA4_CONFIG_PATH=../default.yml
+  link:
+    build: .
+    entrypoint: pypy3 /node/components/lambents/routing/links.py
+    working_dir: /node/components
+    restart: on-failure
+    depends_on:
+      - xbar
+    environment:
+      - PYTHONPATH=/node
+      - XBAR_ROUTER=ws://xbar:8080/ws

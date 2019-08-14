@@ -79,7 +79,7 @@
     {
          "type": "container",
          "options": {
-            "pythonpath": [".",".."],
+            "pythonpath": [".",".."],
             "env": {
                 "inherit": false,
                 "vars":{
@@ -101,7 +101,8 @@
                   },
                   "url": "ws://127.0.0.1:8080/ws"
                }
-            },
+            }
+,
             {
                "type": "class",
                "classname": "components.lambents.lib.machine.LambentMachine",
@@ -115,7 +116,8 @@
                   },
                   "url": "ws://127.0.0.1:8080/ws"
                }
-            },
+            }
+,
             {
                "type": "class",
                "classname": "components.lambents.lib.helpers.HelperSession",
@@ -129,7 +131,8 @@
                   },
                   "url": "ws://127.0.0.1:8080/ws"
                }
-            },
+            }
+,
             {
                "type": "class",
                "classname": "components.lambents.routing.links.LinkManager",
