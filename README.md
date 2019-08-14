@@ -1,3 +1,14 @@
+# Deployment
+
+
+## Kube
+
+TODO
+
+## Compose
+
+`docker-compose up`
+
 # Development
 
 `pip install -r requirements.txt`
