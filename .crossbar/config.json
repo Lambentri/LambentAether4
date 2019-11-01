@@ -25,31 +25,10 @@
                     "publisher": false
                   },
                   "cache": true
-                },
-                {
-                  "uri": "wamp.subscription.get_events",
-                  "match": "exact",
-                  "allow": {
-                    "call": true
-                  },
-                  "disclose": {
-                    "caller": true
-                  },
-                  "cache": true
                 }
               ]
             }
-          ],
-          "store": {
-            "type": "memory",
-            "event-history": [
-              {
-                "uri": "com.lambentri.edge.la4.machine.link",
-                "match":"prefix",
-                "limit": 1
-              }
-            ]
-          }
+          ]
         }
       ],
       "transports": [
@@ -58,7 +37,7 @@
           "endpoint": {
             "interface": "0.0.0.0",
             "type": "tcp",
-            "port": 8080
+            "port": 8083
           },
           "paths": {
             "/": {

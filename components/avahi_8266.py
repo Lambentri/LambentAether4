@@ -87,7 +87,10 @@ class ZeroConfSession(DocMixin, ApplicationSession):
     # zeroconf methods
     def remove_service(self, zeroconf, type, name):
         print("Service %s removed" % (name,))
-        del self.current_items[name]
+        try:
+            del self.current_items[name]
+        except KeyError:
+            pass
 
     @inlineCallbacks
     def add_service(self, zeroconf, type, name):

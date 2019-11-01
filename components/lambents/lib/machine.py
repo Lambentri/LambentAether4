@@ -300,8 +300,8 @@ class LambentMachine(DocMixin, ApplicationSession):
                         "conf": mod.get_config()
                     }
                 except AttributeError as e:
-
-                    print(f"Unable to find machine of class '{item}'")
+                    pass
+                    #print(f"Unable to find machine of class '{item}'")
                     # print(e)
                 pass  # import inplace and inspect to get k:v
             elif issubclass(item, FakeMachine):
