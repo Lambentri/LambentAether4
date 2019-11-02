@@ -378,7 +378,7 @@ class LinkManager(DocMixin, ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8080/ws")
+    url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8083/ws")
     realm = u"realm1"
     runner = ApplicationRunner(url, realm)
     runner.run(LinkManager)

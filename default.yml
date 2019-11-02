@@ -143,6 +143,10 @@ machines:
     cls: "ChasingRocker"
     kwargs: {"h":[245,136]}
 
+  - name: CRHalloween
+    cls: "ChasingRocker"
+    kwargs: {"h":[13,187]}
+
   - name: SRPinkPurple
     cls: "SolidRocker"
     kwargs: {"h":[205,245]}
