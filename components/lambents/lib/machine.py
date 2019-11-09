@@ -58,6 +58,35 @@ class RunningEnum(Enum):
     NOTRUNNING = False
 
 
+class BrightnessEnum(Enum):
+    FULL = 1
+    HALF = 2
+    QUARTER = 4
+    PCT_TEN = 10
+    PCT_FIVE = 20
+    OFF = 0
+
+    def _get_index(self, value):
+        members = [i.value for i in BrightnessEnum.__members__.values()]
+        return members.index(value.value)
+
+    def _value_from_index(self, index: int):
+        members = list(BrightnessEnum.__members__.values())
+        return members[index]
+
+    def next_up(self, value):
+        if value == self.OFF:
+            return BrightnessEnum.OFF
+        index = self._get_index(value) + 1
+        return self._value_from_index(index)
+
+    def next_dn(self, value):
+        if value == self.FULL:
+            return BrightnessEnum.FULL
+        index = self._get_index(value) - 1
+        return self._value_from_index(index)
+
+
 class MachineLoadException(Exception):
     pass
 
@@ -143,6 +172,8 @@ class LambentMachine(DocMixin, ApplicationSession):
         "lambents.rocker.SolidRocker",
         "lambents.rocker.ChasingRocker",
     ]
+
+    brightness = BrightnessEnum(1)
 
     def _handle_loading_config_from_file(self, path):
         try:
@@ -236,6 +267,10 @@ class LambentMachine(DocMixin, ApplicationSession):
         # print(operating_machines)
         for mach in operating_machines:
             res = mach.step()
+            if self.brightness.value == 0:
+                res = [0] * len(res)
+            elif self.brightness.value != 1:
+                res = [int(i/self.brightness.value) for i in res]
             # print(mach.speed.value == TickEnum.TENS.value)
             # if mach.speed.value == TickEnum.TENS.value:
             #     # print(res)
@@ -395,6 +430,20 @@ class LambentMachine(DocMixin, ApplicationSession):
             {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
         return serialized.data
 
+    @wamp.register("com.lambentri.edge.la4.machine.gb.up")
+    def global_brightness_value_up(self):
+        print("uppe")
+        self.brightness = self.brightness.next_up(self.brightness)
+        print(self.brightness)
+        return {"brightness": self.brightness.value}
+
+    @wamp.register("com.lambentri.edge.la4.machine.gb.dn")
+    def global_brightness_value_dn(self):
+        print("downe")
+        self.brightness = self.brightness.next_dn(self.brightness)
+        print(self.brightness)
+        return {"brightness": self.brightness.value}
+
     @inlineCallbacks
     def onJoin(self, details):
         print("joined")
@@ -407,4 +456,4 @@ if __name__ == '__main__':
     url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8083/ws")
     realm = u"realm1"
     runner = ApplicationRunner(url, realm)
-    runner.run(LambentMachine)
+    runner.run(LambentMachine, auto_reconnect=True)

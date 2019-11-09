@@ -106,7 +106,20 @@
                                             <v-icon dark>widgets</v-icon>
                                         </v-btn>
 
-
+                                        <v-card xs6>
+                                          <v-card-text>
+                                            <h3>Global Machine Brighness</h3>
+                                            <v-btn dark small color="primary"
+                                               v-on:click="gb_up()">
+                                              <v-icon dark>mdi-minus</v-icon>
+                                            </v-btn>
+                                            1/{{ machine_global_brightness }}
+                                            <v-btn dark small color="primary"
+                                               v-on:click="gb_dn()">
+                                              <v-icon dark>add</v-icon>
+                                            </v-btn>
+                                          </v-card-text>
+                                        </v-card>
                                         <v-container grid-list-sm fluid>
                                             <v-layout row wrap>
                                                 <v-flex v-for="(value, key) in machines" :key="key " xs8 lg6>
@@ -679,6 +692,7 @@
                     machine_library: {},
                     machine_init_select: {},
                     machine_init_name: "",
+                    machine_global_brightness: "1",
 
                     link_library_dialog: false,
                     link_library: {},
@@ -702,6 +716,27 @@
                     curr_config: {}
                 },
                 methods: {
+                    gb_up: function() {
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.gb.up", [], {}).then(
+                            function (res) {
+                                console.log(res)
+                                window.vueapp.$data.machine_global_brightness = res.brightness
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                    },
+                    gb_dn: function() {
+                        Vue.Wamp.call("com.lambentri.edge.la4.machine.gb.dn", [], {}).then(
+                            function (res) {
+                                window.vueapp.$data.machine_global_brightness = res.brightness
+                            },
+                            function (err) {
+                                console.log(err)
+                            }
+                        )
+                    },
                     tick_up: function (key) {
                         console.log("up" + key)
                         Vue.Wamp.call("com.lambentri.edge.la4.machine.tick_up", [], {"machine_name": key}).then(

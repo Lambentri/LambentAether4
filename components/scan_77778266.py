@@ -114,7 +114,8 @@ class ScanSession(DocMixin, ApplicationSession):
                 hostname_data = socket.gethostbyaddr(result)[0]
                 if "_" not in hostname_data:
                     return # we only care about stuff with esp_ in the hostname
-                hostname_data_short = hostname_data.split('.', 1)[0]
+                # hostname_data_short = hostname_data.split('.', 1)[0]
+                hostname_data_short = result
             except Exception as e:
                 print(e)
                 hostname_data = result
@@ -160,6 +161,9 @@ class ScanSession(DocMixin, ApplicationSession):
                 addr_obj = ipaddress.ip_network((addr['addr'],addr['netmask']), strict=False)
                 addr_hosts = addr_obj.hosts()
                 for host in addr_hosts:
+                    if host in self.current_items:
+                        print(f"{host} is in our list, avoiding booming it again")
+                        continue # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
                     d = threads.deferToThread(self.do_device_scan, ip=str(host))
                     d.addCallback(self.save_device_scan)
                     d.addErrback(self.err_device_scan)
@@ -169,5 +173,5 @@ if __name__ == '__main__':
     url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8083/ws")
     realm = u"realm1"
     runner = ApplicationRunner(url, realm)
-    runner.run(ScanSession)
+    runner.run(ScanSession, auto_reconnect=True)
 
