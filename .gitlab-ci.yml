@@ -19,8 +19,9 @@ build-master:
     
 build-master-arm64:
   stage: build
-  tags: arm64
-    script:
+  tags: 
+    - arm64
+  script:
     - docker build --network host --pull  -t "$CI_REGISTRY_IMAGE" .
     - docker push "$CI_REGISTRY_IMAGE"
   only:
