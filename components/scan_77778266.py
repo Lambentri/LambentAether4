@@ -22,6 +22,7 @@ from components.library import chunks
 
 reactor.suggestThreadPoolSize(255)
 
+
 @dataclass
 class Item:
     address: str
@@ -30,9 +31,14 @@ class Item:
     last_seen: datetime
     fullname: str = None
     nname: str = None
+    paused: bool = False
+
+    def nameit(self, string):
+        self.nname = string
 
     def as_dict(self):
-        return {"address": self.address, "name": self.name,"port":self.port,"last_seen":self.last_seen.isoformat(), "fullname": self.fullname, "nname":self.nname}
+        return {"address": self.address, "name": self.name, "port": self.port, "last_seen": self.last_seen.isoformat(),
+                "fullname": self.fullname, "nname": self.nname}
 
 
 class ScanSession(DocMixin, ApplicationSession):
@@ -42,7 +48,6 @@ class ScanSession(DocMixin, ApplicationSession):
     PORT = 7777
 
     grp = "sinks"
-
 
     current_items = {}
     zsubs = {}
@@ -80,12 +85,25 @@ class ScanSession(DocMixin, ApplicationSession):
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
         """List all found devices"""
-        return {"devices": {k:v.as_dict()  for k,v in self.current_items.items()}}
+        return {"devices": {k: v.as_dict() for k, v in self.current_items.items()}}
 
     @wamp.register("com.lambentri.edge.la4.device.82667777.name")
     def set_name(self, shortname: str, nicename: str):
         """Set a device's display name property """
-        self.current_items[shortname]['nname'] = nicename
+        self.current_items[shortname].nameit(nicename)
+
+    @wamp.register("com.lambentri.edge.la4.device.82667777.poke")
+    def poke_it(self, shortname: str):
+        print("poked")
+        values_list = [(255, 255, 0), (0, 255, 255), (255, 0, 255), (0, 0, 0)]
+        self.current_items[shortname].paused = True
+        for value in values_list:
+            for i in range(0, 200):  # tick it
+                values = value * 300  # 300 leds of test
+                structd = struct.pack('B' * len(values), *values)
+                self.socket.sendto(structd, (self.current_items[shortname].address, self.PORT))
+
+        self.current_items[shortname].paused = False
 
     # udp methods
     def udp_send(self, message, details, id=None):
@@ -99,7 +117,8 @@ class ScanSession(DocMixin, ApplicationSession):
         values = list(itertools.chain.from_iterable(filtered))
 
         structd = struct.pack('B' * len(values), *values)
-        self.socket.sendto(structd, (self.current_items[name].address, self.PORT))
+        if not self.current_items[name].paused:
+            self.socket.sendto(structd, (self.current_items[name].address, self.PORT))
 
     def err_device_scan(self, *args, **kwargs):
         pass
@@ -113,7 +132,7 @@ class ScanSession(DocMixin, ApplicationSession):
             try:
                 hostname_data = socket.gethostbyaddr(result)[0]
                 if "_" not in hostname_data:
-                    return # we only care about stuff with esp_ in the hostname
+                    return  # we only care about stuff with esp_ in the hostname
                 # hostname_data_short = hostname_data.split('.', 1)[0]
                 hostname_data_short = result
             except Exception as e:
@@ -121,20 +140,22 @@ class ScanSession(DocMixin, ApplicationSession):
                 hostname_data = result
                 hostname_data_short = result
 
-
             if hostname_data_short in self.current_items:
                 # only update the last-seen
                 self.current_items[hostname_data_short].last_seen = datetime.now(pytz.utc)
             else:
-                new_item = Item(address=result, name=hostname_data_short, fullname=hostname_data, port=7777, last_seen=datetime.now(pytz.utc))
+                new_item = Item(address=result, name=hostname_data_short, fullname=hostname_data, port=7777,
+                                last_seen=datetime.now(pytz.utc))
                 print(new_item)
                 self.current_items[hostname_data_short] = new_item
 
-                self.zsubs[hostname_data_short] = yield self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{hostname_data_short}",
-                                                  options=SubscribeOptions(details_arg="details", correlation_id=hostname_data_short))
+                self.zsubs[hostname_data_short] = yield self.subscribe(self.udp_send,
+                                                                       f"com.lambentri.edge.la4.device.82667777.{hostname_data_short}",
+                                                                       options=SubscribeOptions(details_arg="details",
+                                                                                                correlation_id=hostname_data_short))
                 print(self.zsubs)
 
-    def do_device_scan(self, ip:str):
+    def do_device_scan(self, ip: str):
         sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # scan if device is open on port 80/tcp
         # print("doscan 80", ip)
@@ -158,12 +179,12 @@ class ScanSession(DocMixin, ApplicationSession):
             except KeyError:
                 continue
             for addr in addrs_inet:
-                addr_obj = ipaddress.ip_network((addr['addr'],addr['netmask']), strict=False)
+                addr_obj = ipaddress.ip_network((addr['addr'], addr['netmask']), strict=False)
                 addr_hosts = addr_obj.hosts()
                 for host in addr_hosts:
                     if host in self.current_items:
                         print(f"{host} is in our list, avoiding booming it again")
-                        continue # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
+                        continue  # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
                     d = threads.deferToThread(self.do_device_scan, ip=str(host))
                     d.addCallback(self.save_device_scan)
                     d.addErrback(self.err_device_scan)
@@ -174,4 +195,3 @@ if __name__ == '__main__':
     realm = u"realm1"
     runner = ApplicationRunner(url, realm)
     runner.run(ScanSession, auto_reconnect=True)
-
