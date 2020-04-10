@@ -7,6 +7,7 @@ from autobahn import wamp
 from enum import Enum
 import os
 import txaio
+from autobahn.wamp import RegisterOptions
 from autobahn.wamp.types import PublishOptions
 from marshmallow import fields
 from marshmallow.schema import Schema
@@ -155,8 +156,8 @@ class LambentMachine(DocMixin, ApplicationSession):
 
     tickers = {}
     machines = {
-        "SlowFakeMachine-a.b": SlowFakeMachine(),
-        "FastFakeMachine-c.d": FastFakeMachine()
+        # "SlowFakeMachine-a.b": SlowFakeMachine(),
+        # "FastFakeMachine-c.d": FastFakeMachine()
     }
     machine_library = [
         SlowFakeMachine,
@@ -421,7 +422,7 @@ class LambentMachine(DocMixin, ApplicationSession):
         return serialized.data
 
     # pass
-    @wamp.register("com.lambentri.edge.la4.machine.list")
+    @wamp.register("com.lambentri.edge.la4.machine.list", options=RegisterOptions(invoke="roundrobin"))
     def list_active_machine_instances(self):
         """List all available machines"""
         schema = MachineDictSerializer()
@@ -443,6 +444,14 @@ class LambentMachine(DocMixin, ApplicationSession):
         self.brightness = self.brightness.next_dn(self.brightness)
         print(self.brightness)
         return {"brightness": self.brightness.value}
+
+    @wamp.register("com.lambentri.edge.la4.machine.gb.set")
+    def global_brightness_value_set(self, value: int):
+        print("globo")
+        self.brightness = BrightnessEnum(value)
+
+        return {"brightness": self.brightness.value}
+
 
     @inlineCallbacks
     def onJoin(self, details):

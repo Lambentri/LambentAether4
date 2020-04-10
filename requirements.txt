@@ -11,7 +11,7 @@ chardet==3.0.4
 Click==7.0
 closure==20180204
 constantly==15.1.0
-crossbar==18.11.1
+# crossbar==18.11.1
 cryptography==2.4.1
 dataclasses==0.7
 greenlet==0.4.13
