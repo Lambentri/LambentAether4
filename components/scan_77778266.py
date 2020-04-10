@@ -42,7 +42,7 @@ class Item:
 
 
 class ScanSession(DocMixin, ApplicationSession):
-    SCAN_TICKS = 60
+    SCAN_TICKS = 1200
     HERALD_TICKS = 1
     HERALD_SRC = "8266-7777"
     PORT = 7777
@@ -169,9 +169,11 @@ class ScanSession(DocMixin, ApplicationSession):
         sock_tcp.close()
 
     def setup_device_scan(self):
-        print("scanning")
         ifaces_list: list[str] = netifaces.interfaces()
         ifaces_trimmed = [i for i in ifaces_list if not any([i.startswith(j) for j in self.PREFIXES_POP])]
+        if os.environ.get("LA4_SCAN_IFACE_LIMIT"):
+            ifaces_to_limit = os.environ.get("LA4_SCAN_IFACE_LIMIT").split(';')
+            ifaces_trimmed = [i for i in ifaces_trimmed if i in ifaces_to_limit]
         for iface in ifaces_trimmed:
             iface_info = netifaces.ifaddresses(iface)
             try:
@@ -182,9 +184,13 @@ class ScanSession(DocMixin, ApplicationSession):
                 addr_obj = ipaddress.ip_network((addr['addr'], addr['netmask']), strict=False)
                 addr_hosts = addr_obj.hosts()
                 for host in addr_hosts:
-                    if host in self.current_items:
+                    # print(host, self.current_items)
+                    if str(host) in self.current_items.keys():
                         print(f"{host} is in our list, avoiding booming it again")
-                        continue  # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
+                        continue # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
+                    if str(host) in os.environ.get("LA4_SCAN_BL").split(';'):
+                        print(f"{host} is in our env blacklist, avoiding booming it")
+                        continue
                     d = threads.deferToThread(self.do_device_scan, ip=str(host))
                     d.addCallback(self.save_device_scan)
                     d.addErrback(self.err_device_scan)

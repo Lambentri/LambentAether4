@@ -163,5 +163,9 @@ machines:
     cls: "SolidRocker"
     kwargs: {"h":[0,42,85,127,171,212], "l": 10}
 
+  - name: CRCYMRGB
+    cls: "ChasingRocker"
+    kwargs: {"h":[0,42,85,127,171,212], "l": 10}
+
 #links:
 #  autoform: true
