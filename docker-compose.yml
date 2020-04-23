@@ -4,9 +4,16 @@ services:
   xbar:
     build: .
     ports:
-      - "8080:8080"
-    entrypoint: crossbar start --cbdir /node/.crossbar --config /node/.crossbar/config.all.json
-    network_mode: "host"
+      - "8083:8083"
+    working_dir: /node/
+    entrypoint: crossbar start --cbdir /node/.crossbar --config /node/.crossbar/config.json
+
+  redis:
+    image: redis
+    container_name: redis
+    expose:
+      - 6379
+
   helper:
     build: .
     entrypoint: pypy3 /node/components/lambents/lib/helpers.py
@@ -16,18 +23,20 @@ services:
       - xbar
     environment:
       - PYTHONPATH=/node
-      - XBAR_ROUTER=ws://xbar:8080/ws
-#  avahi_8266:
-#    build: .
-#    entrypoint: pypy3 /node/components/avahi_8266.py
-#    working_dir: /node/components
-#    restart: on-failure
-#    network_mode: "host"
-#    depends_on:
-#      - xbar
-#    environment:
-#      - PYTHONPATH=/node
-#      - XBAR_ROUTER=ws://xbar:8080/ws
+      - XBAR_ROUTER=ws://xbar:8083/ws
+
+  scan_8266:
+    build: .
+    entrypoint: pypy3 /node/components/scan_77778266.py
+    working_dir: /node/components
+    restart: on-failure
+#    network_mode: "bridge"
+    depends_on:
+      - xbar
+    environment:
+      - PYTHONPATH=/node
+      - XBAR_ROUTER=ws://xbar:8083/ws
+      - LA4_REDIS=redis
   machine:
     build: .
     entrypoint: pypy3 /node/components/lambents/lib/machine.py
@@ -37,7 +46,7 @@ services:
       - xbar
     environment:
       - PYTHONPATH=/node
-      - XBAR_ROUTER=ws://xbar:8080/ws
+      - XBAR_ROUTER=ws://xbar:8083/ws
       - LA4_CONFIG_PATH=../default.yml
   link:
     build: .
@@ -48,4 +57,4 @@ services:
       - xbar
     environment:
       - PYTHONPATH=/node
-      - XBAR_ROUTER=ws://xbar:8080/ws
+      - XBAR_ROUTER=ws://xbar:8083/ws

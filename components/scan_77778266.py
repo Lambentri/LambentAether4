@@ -8,6 +8,8 @@ import pytz
 import socket
 import struct
 
+import txredisapi as redis
+
 from autobahn import wamp
 from autobahn.twisted import ApplicationSession
 from autobahn.twisted.wamp import ApplicationRunner
@@ -45,6 +47,7 @@ class ScanSession(DocMixin, ApplicationSession):
     SCAN_TICKS = 1200
     HERALD_TICKS = 1
     HERALD_SRC = "8266-7777"
+    WRITE_TICKS = 10
     PORT = 7777
 
     grp = "sinks"
@@ -53,6 +56,8 @@ class ScanSession(DocMixin, ApplicationSession):
     zsubs = {}
 
     PREFIXES_POP = ["lo", "br", "veth"]
+
+    redis = None
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
@@ -70,6 +75,18 @@ class ScanSession(DocMixin, ApplicationSession):
 
         self.ticker_finder = task.LoopingCall(self.setup_device_scan)
         self.ticker_finder.start(self.SCAN_TICKS)
+        if os.environ.get('LA4_REDIS'):
+            print("Yay a redis")
+            self.redis = yield redis.Connection(os.environ.get("LA4_REDIS"), 6379, 13)
+            print(self.redis.Methods)
+            self.ticker_name_writer = task.LoopingCall(self.write_names)
+            self.ticker_name_writer.start(self.WRITE_TICKS)
+        print("setup")
+
+    def onDisconnect(self):
+        super().onDisconnect()
+        if os.environ.get('LA4_REDIS'):
+            self.redis.disconnect()
 
     @docupub(topics=["com.lambentri.edge.la4.machine.sink.8266-7777"], shapes={
         "com.lambentri.edge.la4.machine.sink.8266-7777": [{"iname": "str", "id": "topicstr", "name": "str"}]})
@@ -95,7 +112,7 @@ class ScanSession(DocMixin, ApplicationSession):
     @wamp.register("com.lambentri.edge.la4.device.82667777.poke")
     def poke_it(self, shortname: str):
         print("poked")
-        values_list = [(255, 255, 0), (0, 255, 255), (255, 0, 255), (0, 0, 0)]
+        values_list = [(255, 255, 0), (0, 255, 255), (255, 0, 255), (0, 0, 0), (0, 0, 0)]
         self.current_items[shortname].paused = True
         for value in values_list:
             for i in range(0, 200):  # tick it
@@ -144,8 +161,14 @@ class ScanSession(DocMixin, ApplicationSession):
                 # only update the last-seen
                 self.current_items[hostname_data_short].last_seen = datetime.now(pytz.utc)
             else:
+                if self.redis:
+                    nname = yield self.get_name_for_key(hostname_data_short)
+                    print("NAMAMMAMAMA")
+                    print(nname)
+                else:
+                    nname = None
                 new_item = Item(address=result, name=hostname_data_short, fullname=hostname_data, port=7777,
-                                last_seen=datetime.now(pytz.utc))
+                                last_seen=datetime.now(pytz.utc), nname=nname)
                 print(new_item)
                 self.current_items[hostname_data_short] = new_item
 
@@ -188,12 +211,24 @@ class ScanSession(DocMixin, ApplicationSession):
                     if str(host) in self.current_items.keys():
                         print(f"{host} is in our list, avoiding booming it again")
                         continue # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
-                    if str(host) in os.environ.get("LA4_SCAN_BL").split(';'):
+                    if str(host) in os.environ.get("LA4_SCAN_BL","").split(';'):
                         print(f"{host} is in our env blacklist, avoiding booming it")
                         continue
                     d = threads.deferToThread(self.do_device_scan, ip=str(host))
                     d.addCallback(self.save_device_scan)
                     d.addErrback(self.err_device_scan)
+    @inlineCallbacks
+    def get_name_for_key(self, key):
+        print(f"loading redis 4 {key}")
+        val = yield self.redis.get(f"LA4_DEVICE_NAME_{key}")
+        return val
+
+    def write_names(self):
+        print("writin redis")
+        for k, i in self.current_items.items():
+            if i.nname:
+                self.redis.set(f"LA4_DEVICE_NAME_{k}", i.nname)
+
 
 
 if __name__ == '__main__':

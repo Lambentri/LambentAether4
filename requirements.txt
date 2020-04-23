@@ -11,9 +11,9 @@ chardet==3.0.4
 Click==7.0
 closure==20180204
 constantly==15.1.0
-# crossbar==18.11.1
+crossbar==18.11.1
 cryptography==2.4.1
-# dataclasses==0.7
+dataclasses==0.7
 greenlet==0.4.13
 h2==3.0.1
 hpack==3.0.0
@@ -32,6 +32,7 @@ marshmallow==2.16.3
 marshmallow-enum==1.4.1
 mistune==0.8.4
 netaddr==0.7.19
+netifaces==0.10.9
 passlib==1.7.1
 pathtools==0.1.2
 ply==3.11

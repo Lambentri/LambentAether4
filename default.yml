@@ -147,6 +147,14 @@ machines:
     cls: "ChasingRocker"
     kwargs: {"h":[13,187]}
 
+  - name: CRXmas
+    cls: "ChasingRocker"
+    kwargs: {"h":[0,85], "l": 15}
+
+  - name: CRCYM
+    cls: "ChasingRocker"
+    kwargs: {"h":[42,127,212], "l": 15}
+
   - name: SRPinkPurple
     cls: "SolidRocker"
     kwargs: {"h":[205,245]}
