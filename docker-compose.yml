@@ -3,6 +3,7 @@ version: '3'
 services:
   xbar:
     build: .
+    network_mode: "host"
     ports:
       - "8083:8083"
     working_dir: /node/
@@ -11,50 +12,69 @@ services:
   redis:
     image: redis
     container_name: redis
+    network_mode: "host"
     expose:
       - 6379
+    ports:
+      - "6379:6379"
+    extra_hosts:
+      - "xbar:127.0.0.1"
 
   helper:
     build: .
     entrypoint: pypy3 /node/components/lambents/lib/helpers.py
     working_dir: /node/components
     restart: on-failure
+    network_mode: "host"
     depends_on:
       - xbar
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws
+    extra_hosts:
+      - "xbar:127.0.0.1"
 
   scan_8266:
     build: .
     entrypoint: pypy3 /node/components/scan_77778266.py
     working_dir: /node/components
     restart: on-failure
-#    network_mode: "bridge"
-    depends_on:
-      - xbar
+    network_mode: "host"
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws
       - LA4_REDIS=redis
+      - LA4_SCAN_IFACE_LIMIT=wlp3s0
+    extra_hosts:
+      - "xbar:127.0.0.1"
+      - "redis:127.0.0.1"
+    sysctls:
+      - net.ipv4.ip_forward=1
+
   machine:
     build: .
     entrypoint: pypy3 /node/components/lambents/lib/machine.py
     working_dir: /node/components
     restart: on-failure
+    network_mode: "host"
     depends_on:
       - xbar
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws
       - LA4_CONFIG_PATH=../default.yml
+    extra_hosts:
+      - "xbar:127.0.0.1"
   link:
     build: .
     entrypoint: pypy3 /node/components/lambents/routing/links.py
     working_dir: /node/components
     restart: on-failure
+    network_mode: "host"
     depends_on:
       - xbar
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws
+    extra_hosts:
+      - "xbar:127.0.0.1"

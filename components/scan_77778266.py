@@ -207,7 +207,6 @@ class ScanSession(DocMixin, ApplicationSession):
                 addr_obj = ipaddress.ip_network((addr['addr'], addr['netmask']), strict=False)
                 addr_hosts = addr_obj.hosts()
                 for host in addr_hosts:
-                    # print(host, self.current_items)
                     if str(host) in self.current_items.keys():
                         print(f"{host} is in our list, avoiding booming it again")
                         continue # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
