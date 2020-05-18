@@ -433,6 +433,7 @@ class LambentMachine(DocMixin, ApplicationSession):
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.up")
     def global_brightness_value_up(self):
+        """Move the global brightness up a single tick"""
         print("uppe")
         self.brightness = self.brightness.next_up(self.brightness)
         print(self.brightness)
@@ -440,6 +441,7 @@ class LambentMachine(DocMixin, ApplicationSession):
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.dn")
     def global_brightness_value_dn(self):
+        """Move the global brightness down a single tick"""
         print("downe")
         self.brightness = self.brightness.next_dn(self.brightness)
         print(self.brightness)
@@ -447,6 +449,7 @@ class LambentMachine(DocMixin, ApplicationSession):
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.set")
     def global_brightness_value_set(self, value: int):
+        """Set the global brightness"""
         print("globo")
         self.brightness = BrightnessEnum(value)
 

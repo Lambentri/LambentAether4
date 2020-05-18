@@ -19,6 +19,8 @@ services:
       - "6379:6379"
     extra_hosts:
       - "xbar:127.0.0.1"
+    volumes:
+    - ./data:/data
 
   helper:
     build: .
