@@ -192,11 +192,21 @@ class HelperSession(DocMixin, ApplicationSession):
                 "desc": """Various utility functions for name generation and documentation collection """,
                 "header": "Helpers",
                 "grp": "helpers"
+            },
+            "Sets": {
+                "desc": """These functions provide controls for creating and controlling various sets of objects. 
+                           These objects includes the Zones, Groups, and Fusors: <br />
+                           - Zones : Physical Areas Containing Devices
+                           - Groups: Groups of Devices, Same data 
+                           - Fusors: Combine one or more sources into a coherent datastream 
+                       """,
+                "header": "Sets",
+                "grp": "sets"
             }
         }
         data_h = {
             "Publishers": {
-                "desc": "Topics that publish data at arbitrary-md intervals",
+                "desc": "Topics that publish data at arbitrary intervals",
                 "type": "pub",
             },
             "Subscribers": {

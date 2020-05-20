@@ -272,6 +272,7 @@ class LambentMachine(DocMixin, ApplicationSession):
                 res = [0] * len(res)
             elif self.brightness.value != 1:
                 res = [int(i/self.brightness.value) for i in res]
+
             # print(mach.speed.value == TickEnum.TENS.value)
             # if mach.speed.value == TickEnum.TENS.value:
             #     # print(res)

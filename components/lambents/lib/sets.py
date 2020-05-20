@@ -1,25 +1,39 @@
+import os
+
 from autobahn import wamp
-from autobahn.twisted import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 from enum import Enum
 
 #
 # Machine -> Link -> Group -> Zone
+from typing import List, Dict, Set
 from dataclasses import dataclass
+from twisted.internet.defer import inlineCallbacks
 
 from components.lambents.lib.machine import BrightnessEnum
+from components.lambents.lib.mixins import DocMixin
 
 
 @dataclass
 class ZoneSpec:
     name: str
     details: str
+    filters: List[str]
+    devices: Set[str]
+    brightness: BrightnessEnum = BrightnessEnum.FULL
 
-    filters: list[str]
-    brightness: BrightnessEnum
+    def as_dict(self):
+        return {
+            "name": self.name,
+            "details": self.details,
+            "filters": self.filters,
+            "devices": self.devices,
+            "brightness": self.brightness.name,
+        }
 
 
-class ZoneHelper(ApplicationSession):
+class ZoneHelper(DocMixin, ApplicationSession):
     """
     Zones are meant to represent physical areas where devices reside
 
@@ -28,32 +42,38 @@ class ZoneHelper(ApplicationSession):
 
     Zones are the final step applied before being shuffled off to the device writers
     """
-    zones: dict[str, ZoneSpec]
+    grp = "sets"
+    zones: Dict[str, ZoneSpec]
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.list")
     def zone_list(self):
-        pass
+        return [zone.as_dict() for zone in self.zones]
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.add")
-    def zone_add(self, name: str):
-        pass
+    def zone_add(self, name: str, details: str):
+        self.zones[name] = ZoneSpec(name=name, details=details)
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.rm")
     def zone_rm(self, name: str):
-        pass
+        try:
+            del self.zones[name]
+        except:
+            pass
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.assign")
     def zone_assign(self, name: str, device: str):
-        pass
+        if name in self.zones:
+            self.zones[name].devices.add(device)
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.unassign")
     def zone_unassign(self, name: str, device: str):
-        pass
+        if name in self.zones:
+            self.zones[name].devices.remove(device)
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.brightness.status")
     def zone_brightness_status(self):
         """All the brightness statuses for all the zones"""
-        pass
+        return [{"name": zone.name, "brightness": zone.brightness.name} for zone in self.zones.values()]
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.brightness.up")
     def zone_brightness_up(self, name: str):
@@ -76,7 +96,7 @@ class ZoneHelper(ApplicationSession):
     @wamp.register("com.lambentri.edge.la4.sets.zone.filter.status")
     def zone_filter_status(self):
         """All filters all zones all the time"""
-        pass
+        return [{"name": zone.name, "filters": zone.filters} for zone in self.zones.values()]
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.filter.list")
     def zone_filter_list(self):
@@ -85,21 +105,34 @@ class ZoneHelper(ApplicationSession):
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.filter.add")
     def zone_filter_add(self, name: str, filt: str, position: int = 0):
-        pass
+        if name in self.zones:
+            self.zones[name].filters.insert(position, filt)
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.filter.rm")
-    def zone_filter_rm(self, name: str, filt: str):
-        pass
+    def zone_filter_rm(self, name: str, position: int):
+        if name in self.zones:
+            self.zones[name].filters.pop(position)
 
     @wamp.register("com.lambentri.edge.la4.sets.zone.filter.move")
-    def zone_filter_move(self, name: str, filt: str, direction: str):
-        pass
+    def zone_filter_move(self, name: str, position: int, direction_up: bool):
+        if name in self.zones:
+            if direction_up:
+                self.zones[name].filters[position], self.zones[name].filters[position+1] = self.zones[name].filters[position+1], self.zones[name].filters[position]
+            else:
+                self.zones[name].filters[position], self.zones[name].filters[position - 1] = self.zones[name].filters[position - 1], self.zones[name].filters[position]
 
+            return self.zones[name].filters
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        print("joined")
+        self.regs = yield self.register(self)
+        self.document()
 
 @dataclass
 class GroupSpec:
     name: str
-    devices: list[str]
+    devices: List[str]
 
 
 class GroupHelper(ApplicationSession):
@@ -108,7 +141,7 @@ class GroupHelper(ApplicationSession):
 
     Adding a device to a group disables all links to it and vice versa
     """
-    groups: dict[str, GroupSpec]
+    groups: Dict[str, GroupSpec]
 
     @wamp.register("com.lambentri.edge.la4.sets.group.list")
     def group_list(self):
@@ -148,7 +181,7 @@ class FusorSource:
 class FusorSpec:
     name: str
     details: str
-    sources: list[FusorSource]
+    sources: List[FusorSource]
     mode: FusorMode
 
 
@@ -163,7 +196,7 @@ class FusorHelper(ApplicationSession):
     On unassign, the values for the given range are set to return the fusor's default empty value, black
 
     """
-    fusors: dict[str, FusorSpec]
+    fusors: Dict[str, FusorSpec]
 
     @wamp.register("com.lambentri.edge.la4.sets.fusor.list")
     def fusor_list(self):
@@ -188,3 +221,9 @@ class FusorHelper(ApplicationSession):
     @wamp.register("com.lambentri.edge.la4.sets.fusor.mode")
     def fusor_toggle(self, name: str, mode: str):
         pass
+
+if __name__ == '__main__':
+    url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8083/ws")
+    realm = u"realm1"
+    runner = ApplicationRunner(url, realm)
+    runner.run(ZoneHelper, auto_reconnect=True)

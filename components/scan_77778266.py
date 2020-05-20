@@ -1,3 +1,5 @@
+from enum import Enum
+
 from datetime import datetime
 
 import ipaddress
@@ -24,6 +26,14 @@ from components.library import chunks
 
 reactor.suggestThreadPoolSize(255)
 
+class BPP(Enum):
+    RGB = "RGB"
+    GRB = "GRB"
+    RGBWW = "RGBWW"
+    RGBCW = "RGBCW"
+    RGBNW = "RGBNW"
+    RGBAW = "RGBAW"
+
 
 @dataclass
 class Item:
@@ -34,18 +44,19 @@ class Item:
     fullname: str = None
     nname: str = None
     paused: bool = False
+    bpp: BPP = BPP.RGB
 
     def nameit(self, string):
         self.nname = string
 
     def as_dict(self):
         return {"address": self.address, "name": self.name, "port": self.port, "last_seen": self.last_seen.isoformat(),
-                "fullname": self.fullname, "nname": self.nname}
+                "fullname": self.fullname, "nname": self.nname, "bpp": self.bpp}
 
 
 class ScanSession(DocMixin, ApplicationSession):
     SCAN_TICKS = 1200
-    HERALD_TICKS = 1
+    HERALD_TICKS = 3
     HERALD_SRC = "8266-7777"
     WRITE_TICKS = 10
     PORT = 7777
@@ -89,25 +100,36 @@ class ScanSession(DocMixin, ApplicationSession):
             self.redis.disconnect()
 
     @docupub(topics=["com.lambentri.edge.la4.machine.sink.8266-7777"], shapes={
-        "com.lambentri.edge.la4.machine.sink.8266-7777": [{"iname": "str", "id": "topicstr", "name": "str"}]})
+        "com.lambentri.edge.la4.machine.sink.8266-7777": [{"iname": "str", "id": "topicstr", "name": "str", "bpp": "bpp"}]})
     @inlineCallbacks
     def device_herald(self):
         """Announces found devices every half second"""
         built = []
         for k, v in self.current_items.items():
-            built.append({"iname": v.name, "id": f"com.lambentri.edge.la4.device.82667777.{k}",
-                          "name": v.nname or v.name})
+            built.append({"iname": v.name,
+                          "id": f"com.lambentri.edge.la4.device.82667777.{k}",
+                          "name": v.nname or v.name,
+                          "bpp": v.bpp.value
+                          })
         yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
 
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
         """List all found devices"""
-        return {"devices": {k: v.as_dict() for k, v in self.current_items.items()}}
+        return {
+            "devices": {k: v.as_dict() for k, v in self.current_items.items()},
+        }
 
     @wamp.register("com.lambentri.edge.la4.device.82667777.name")
     def set_name(self, shortname: str, nicename: str):
         """Set a device's display name property """
         self.current_items[shortname].nameit(nicename)
+
+    @wamp.register("com.lambentri.edge.la4.device.82667777.bpp")
+    def set_bpp(self, shortname: str, bpp: str):
+        """Set a device's display name property """
+        print("bpp", bpp)
+        self.current_items[shortname].bpp = BPP(bpp)
 
     @wamp.register("com.lambentri.edge.la4.device.82667777.poke")
     def poke_it(self, shortname: str):
@@ -122,6 +144,22 @@ class ScanSession(DocMixin, ApplicationSession):
 
         self.current_items[shortname].paused = False
 
+    def _ww_from_rgb(self, r, g, b):
+        pass
+
+    def _w_from_rgb(self, r, g, b, coef=2):
+        return min(r,g,b)/coef
+
+    def _a_from_rgb(self, r, g, b):
+        w = self._w_from_rgb(r, g, b)
+        a = r - w
+        if (a > (g - w) * 2):
+            a = (g - w) * 2
+
+        return a
+
+
+
     # udp methods
     def udp_send(self, message, details, id=None):
         # print(details)
@@ -130,9 +168,22 @@ class ScanSession(DocMixin, ApplicationSession):
             name = ".".join(details.topic.rsplit('.', 4)[1:])
 
         chunked = chunks(message, 3)
-        filtered = [[rgbvals[1], rgbvals[0], rgbvals[2]] for rgbvals in chunked]
-        values = list(itertools.chain.from_iterable(filtered))
+        id = details.topic.split('com.lambentri.edge.la4.device.82667777.', 1)[1]
 
+        if self.current_items[id].bpp == BPP.GRB:
+            filtered = [[rgbv[0], rgbv[1], rgbv[2]] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGB:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2]] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBWW:
+            pass
+        elif self.current_items[id].bpp == BPP.RGBNW:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBCW:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBAW:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._a_from_rgb(rgbv[1], rgbv[0], rgbv[2]), self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+
+        values = list(itertools.chain.from_iterable(filtered))
         structd = struct.pack('B' * len(values), *values)
         if not self.current_items[name].paused:
             self.socket.sendto(structd, (self.current_items[name].address, self.PORT))
