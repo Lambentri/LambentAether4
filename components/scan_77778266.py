@@ -1,3 +1,5 @@
+from enum import Enum
+
 from datetime import datetime
 
 import ipaddress
@@ -7,6 +9,8 @@ import os
 import pytz
 import socket
 import struct
+
+import txredisapi as redis
 
 from autobahn import wamp
 from autobahn.twisted import ApplicationSession
@@ -22,6 +26,15 @@ from components.library import chunks
 
 reactor.suggestThreadPoolSize(255)
 
+class BPP(Enum):
+    RGB = "RGB"
+    GRB = "GRB"
+    RGBWW = "RGBWW"
+    RGBCW = "RGBCW"
+    RGBNW = "RGBNW"
+    RGBAW = "RGBAW"
+
+
 @dataclass
 class Item:
     address: str
@@ -30,24 +43,32 @@ class Item:
     last_seen: datetime
     fullname: str = None
     nname: str = None
+    paused: bool = False
+    bpp: BPP = BPP.RGB
+
+    def nameit(self, string):
+        self.nname = string
 
     def as_dict(self):
-        return {"address": self.address, "name": self.name,"port":self.port,"last_seen":self.last_seen.isoformat(), "fullname": self.fullname, "nname":self.nname}
+        return {"address": self.address, "name": self.name, "port": self.port, "last_seen": self.last_seen.isoformat(),
+                "fullname": self.fullname, "nname": self.nname, "bpp": self.bpp}
 
 
 class ScanSession(DocMixin, ApplicationSession):
     SCAN_TICKS = 1200
-    HERALD_TICKS = 1
+    HERALD_TICKS = 3
     HERALD_SRC = "8266-7777"
+    WRITE_TICKS = 10
     PORT = 7777
 
     grp = "sinks"
-
 
     current_items = {}
     zsubs = {}
 
     PREFIXES_POP = ["lo", "br", "veth"]
+
+    redis = None
 
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
@@ -65,27 +86,79 @@ class ScanSession(DocMixin, ApplicationSession):
 
         self.ticker_finder = task.LoopingCall(self.setup_device_scan)
         self.ticker_finder.start(self.SCAN_TICKS)
+        if os.environ.get('LA4_REDIS'):
+            print("Yay a redis")
+            self.redis = yield redis.Connection(os.environ.get("LA4_REDIS"), 6379, 13)
+            print(self.redis.Methods)
+            self.ticker_name_writer = task.LoopingCall(self.write_names)
+            self.ticker_name_writer.start(self.WRITE_TICKS)
+        print("setup")
+
+    def onDisconnect(self):
+        super().onDisconnect()
+        if os.environ.get('LA4_REDIS'):
+            self.redis.disconnect()
 
     @docupub(topics=["com.lambentri.edge.la4.machine.sink.8266-7777"], shapes={
-        "com.lambentri.edge.la4.machine.sink.8266-7777": [{"iname": "str", "id": "topicstr", "name": "str"}]})
+        "com.lambentri.edge.la4.machine.sink.8266-7777": [{"iname": "str", "id": "topicstr", "name": "str", "bpp": "bpp"}]})
     @inlineCallbacks
     def device_herald(self):
         """Announces found devices every half second"""
         built = []
         for k, v in self.current_items.items():
-            built.append({"iname": v.name, "id": f"com.lambentri.edge.la4.device.82667777.{k}",
-                          "name": v.nname or v.name})
+            built.append({"iname": v.name,
+                          "id": f"com.lambentri.edge.la4.device.82667777.{k}",
+                          "name": v.nname or v.name,
+                          "bpp": v.bpp.value
+                          })
         yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
 
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
         """List all found devices"""
-        return {"devices": {k:v.as_dict()  for k,v in self.current_items.items()}}
+        return {
+            "devices": {k: v.as_dict() for k, v in self.current_items.items()},
+        }
 
     @wamp.register("com.lambentri.edge.la4.device.82667777.name")
     def set_name(self, shortname: str, nicename: str):
         """Set a device's display name property """
-        self.current_items[shortname]['nname'] = nicename
+        self.current_items[shortname].nameit(nicename)
+
+    @wamp.register("com.lambentri.edge.la4.device.82667777.bpp")
+    def set_bpp(self, shortname: str, bpp: str):
+        """Set a device's display name property """
+        print("bpp", bpp)
+        self.current_items[shortname].bpp = BPP(bpp)
+
+    @wamp.register("com.lambentri.edge.la4.device.82667777.poke")
+    def poke_it(self, shortname: str):
+        print("poked")
+        values_list = [(255, 255, 0), (0, 255, 255), (255, 0, 255), (0, 0, 0), (0, 0, 0)]
+        self.current_items[shortname].paused = True
+        for value in values_list:
+            for i in range(0, 200):  # tick it
+                values = value * 300  # 300 leds of test
+                structd = struct.pack('B' * len(values), *values)
+                self.socket.sendto(structd, (self.current_items[shortname].address, self.PORT))
+
+        self.current_items[shortname].paused = False
+
+    def _ww_from_rgb(self, r, g, b):
+        pass
+
+    def _w_from_rgb(self, r, g, b, coef=2):
+        return min(r,g,b)/coef
+
+    def _a_from_rgb(self, r, g, b):
+        w = self._w_from_rgb(r, g, b)
+        a = r - w
+        if (a > (g - w) * 2):
+            a = (g - w) * 2
+
+        return a
+
+
 
     # udp methods
     def udp_send(self, message, details, id=None):
@@ -95,11 +168,25 @@ class ScanSession(DocMixin, ApplicationSession):
             name = ".".join(details.topic.rsplit('.', 4)[1:])
 
         chunked = chunks(message, 3)
-        filtered = [[rgbvals[1], rgbvals[0], rgbvals[2]] for rgbvals in chunked]
-        values = list(itertools.chain.from_iterable(filtered))
+        id = details.topic.split('com.lambentri.edge.la4.device.82667777.', 1)[1]
 
+        if self.current_items[id].bpp == BPP.GRB:
+            filtered = [[rgbv[0], rgbv[1], rgbv[2]] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGB:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2]] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBWW:
+            pass
+        elif self.current_items[id].bpp == BPP.RGBNW:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBCW:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBAW:
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._a_from_rgb(rgbv[1], rgbv[0], rgbv[2]), self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+
+        values = list(itertools.chain.from_iterable(filtered))
         structd = struct.pack('B' * len(values), *values)
-        self.socket.sendto(structd, (self.current_items[name].address, self.PORT))
+        if not self.current_items[name].paused:
+            self.socket.sendto(structd, (self.current_items[name].address, self.PORT))
 
     def err_device_scan(self, *args, **kwargs):
         pass
@@ -113,7 +200,7 @@ class ScanSession(DocMixin, ApplicationSession):
             try:
                 hostname_data = socket.gethostbyaddr(result)[0]
                 if "_" not in hostname_data:
-                    return # we only care about stuff with esp_ in the hostname
+                    return  # we only care about stuff with esp_ in the hostname
                 # hostname_data_short = hostname_data.split('.', 1)[0]
                 hostname_data_short = result
             except Exception as e:
@@ -121,20 +208,28 @@ class ScanSession(DocMixin, ApplicationSession):
                 hostname_data = result
                 hostname_data_short = result
 
-
             if hostname_data_short in self.current_items:
                 # only update the last-seen
                 self.current_items[hostname_data_short].last_seen = datetime.now(pytz.utc)
             else:
-                new_item = Item(address=result, name=hostname_data_short, fullname=hostname_data, port=7777, last_seen=datetime.now(pytz.utc))
+                if self.redis:
+                    nname = yield self.get_name_for_key(hostname_data_short)
+                    print("NAMAMMAMAMA")
+                    print(nname)
+                else:
+                    nname = None
+                new_item = Item(address=result, name=hostname_data_short, fullname=hostname_data, port=7777,
+                                last_seen=datetime.now(pytz.utc), nname=nname)
                 print(new_item)
                 self.current_items[hostname_data_short] = new_item
 
-                self.zsubs[hostname_data_short] = yield self.subscribe(self.udp_send, f"com.lambentri.edge.la4.device.82667777.{hostname_data_short}",
-                                                  options=SubscribeOptions(details_arg="details", correlation_id=hostname_data_short))
+                self.zsubs[hostname_data_short] = yield self.subscribe(self.udp_send,
+                                                                       f"com.lambentri.edge.la4.device.82667777.{hostname_data_short}",
+                                                                       options=SubscribeOptions(details_arg="details",
+                                                                                                correlation_id=hostname_data_short))
                 print(self.zsubs)
 
-    def do_device_scan(self, ip:str):
+    def do_device_scan(self, ip: str):
         sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # scan if device is open on port 80/tcp
         # print("doscan 80", ip)
@@ -160,19 +255,30 @@ class ScanSession(DocMixin, ApplicationSession):
             except KeyError:
                 continue
             for addr in addrs_inet:
-                addr_obj = ipaddress.ip_network((addr['addr'],addr['netmask']), strict=False)
+                addr_obj = ipaddress.ip_network((addr['addr'], addr['netmask']), strict=False)
                 addr_hosts = addr_obj.hosts()
                 for host in addr_hosts:
-                    # print(host, self.current_items)
                     if str(host) in self.current_items.keys():
                         print(f"{host} is in our list, avoiding booming it again")
                         continue # avoid tickling stuff we already know about, #TODO add a timer for long term scanning
-                    if str(host) in os.environ.get("LA4_SCAN_BL").split(';'):
+                    if str(host) in os.environ.get("LA4_SCAN_BL","").split(';'):
                         print(f"{host} is in our env blacklist, avoiding booming it")
                         continue
                     d = threads.deferToThread(self.do_device_scan, ip=str(host))
                     d.addCallback(self.save_device_scan)
                     d.addErrback(self.err_device_scan)
+    @inlineCallbacks
+    def get_name_for_key(self, key):
+        print(f"loading redis 4 {key}")
+        val = yield self.redis.get(f"LA4_DEVICE_NAME_{key}")
+        return val
+
+    def write_names(self):
+        print("writin redis")
+        for k, i in self.current_items.items():
+            if i.nname:
+                self.redis.set(f"LA4_DEVICE_NAME_{k}", i.nname)
+
 
 
 if __name__ == '__main__':
@@ -180,4 +286,3 @@ if __name__ == '__main__':
     realm = u"realm1"
     runner = ApplicationRunner(url, realm)
     runner.run(ScanSession, auto_reconnect=True)
-

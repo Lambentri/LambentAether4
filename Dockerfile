@@ -35,6 +35,7 @@ RUN    apt-get update \
                libunwind-dev \
                libsnappy-dev \
                libbz2-dev \
+               netcat \
     # install Crossbar.io from PyPI. rgd pip: https://github.com/pypa/pip/issues/6158 and https://github.com/pypa/pip/issues/6197
     && pip install --no-cache-dir --upgrade "pip<19" \
     && pip install --no-cache-dir crossbar>=${CROSSBAR_VERSION} \
@@ -74,6 +75,7 @@ EXPOSE 8080 8000
 COPY requirements.txt /node
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /node
+RUN ls -la /node/.crossbar
 
 USER root
 RUN chown -R crossbar:crossbar /node/*

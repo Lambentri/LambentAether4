@@ -25,15 +25,15 @@ class DocMixin:
         """TODO INSPECT RETURN on args"""
         func = getattr(self, handle)
         args = inspect.signature(func)
-        print(args)
+        # print(args)
         if args and args.parameters:
             if isinstance(list(args.parameters.values())[0], dict):
                 x =  {k:v.get("annotation", "str") for k,v in args.parameters.items()}
                 print(x)
                 return x
-            print("notdict")
+            # print("notdict")
             y = {k:str(v.annotation).split("'")[1] for k,v in args.parameters.items() if v.annotation != inspect._empty }
-            print(y)
+            # print(y)
             return y
 
 
@@ -79,7 +79,7 @@ class DocMixin:
 
             self.pubmembers = [i for i in inspect.getmembers(self, predicate=inspect.ismethod) if
                                hasattr(i[1], "_publisher")]
-            print("PUBMEMBERS")
+            # print("PUBMEMBERS")
             for member in self.pubmembers:
                 for topic in member[1]._topics:
                     yield self.publish(
