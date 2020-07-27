@@ -164,7 +164,6 @@ class LambentMachine(DocMixin, ApplicationSession):
         FastFakeMachine,
         "lambents.solids.SolidStep",
         "lambents.solids.SolidStepHSV",
-        "lambents.solids.SolidStepHSBBBB",
         "lambents.chasers.SimpleColorChaser",
         "lambents.chasers.MultiColorChaser",
         "lambents.chasers.MultiNoSpaceChaser",
@@ -172,6 +171,7 @@ class LambentMachine(DocMixin, ApplicationSession):
         "lambents.scapes.BounceScape",
         "lambents.rocker.SolidRocker",
         "lambents.rocker.ChasingRocker",
+        "lambents.growth.FireflyHSV",
     ]
 
     brightness = BrightnessEnum(1)

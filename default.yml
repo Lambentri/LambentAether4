@@ -175,5 +175,9 @@ machines:
     cls: "ChasingRocker"
     kwargs: {"h":[0,42,85,127,171,212], "l": 10}
 
+  - name: Firefly
+    cls: "FireflyHSV"
+    kwargs: {"h":52}
+
 #links:
 #  autoform: true
