@@ -318,7 +318,7 @@ class LambentMachine(DocMixin, ApplicationSession):
         mach.speed = mach.speed.next_dn(mach.speed)
         return {"speed": mach.speed.name}
 
-    @wamp.register("com.lambentri.edge.la4.machine.library")
+    @wamp.register("com.lambentri.edge.la4.machine.library", options=RegisterOptions(invoke="roundrobin"))
     def machine_library_retrieve(self):
         """Lists available machine templates in the library"""
         machine_ret = {}
@@ -357,6 +357,8 @@ class LambentMachine(DocMixin, ApplicationSession):
     # @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.machine.init")
     def init_machine_instance(self, machine_cls: str, machine_name: str, machine_kwargs: dict, direct: bool=False):
+        # TODO FIGURE OUT HOW TO SPECIFY WHICH MACHINE PROVIDER TO USE WHEN CALLING INIT
+        # PERHAPS EACH IMPL SHOULD SELF IDENTIFY AND CHECK? FOR NOW THE OTHER MACHINE PROVIDERS ARE UNCONFIGURABLE
         """Starts a machine. NOTE passing in the same machine_name will overwrite whatever was there. This can be leveraged to edit machine details!!"""
         # this is called on startup as well as when adding new configs
         # startup uses direct=True, since we're not trying to de-chunk our chunked frontend UI
