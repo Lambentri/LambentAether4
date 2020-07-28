@@ -179,5 +179,25 @@ machines:
     cls: "FireflyHSV"
     kwargs: {"h":52}
 
+  - name: Firefly3k
+    cls: "FireflyHSV"
+    kwargs: {"h":52, "multi":3000}
+
+  - name: Firefly1k
+    cls: "FireflyHSV"
+    kwargs: {"h":52, "multi":1000}
+
+  - name: Firefly500
+    cls: "FireflyHSV"
+    kwargs: {"h":52, "multi":500}
+
+  - name: FireflyRando
+    cls: "GMFireflyRandomHSV"
+    kwargs: {"h":[52, 15, 140], "multi":1000}
+
+  - name: FireflyRando100
+    cls: "GMFireflyRandomHSV"
+    kwargs: {"h":[52, 15, 140], "multi":100}
+
 #links:
 #  autoform: true

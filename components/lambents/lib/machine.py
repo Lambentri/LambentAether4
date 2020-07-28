@@ -172,6 +172,7 @@ class LambentMachine(DocMixin, ApplicationSession):
         "lambents.rocker.SolidRocker",
         "lambents.rocker.ChasingRocker",
         "lambents.growth.FireflyHSV",
+        "lambents.growth.GMFireflyRandomHSV",
     ]
 
     brightness = BrightnessEnum(1)

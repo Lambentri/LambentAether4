@@ -15,22 +15,19 @@ class GMLeave(GrowthMortalityBase):
     pass
 
 
-class GMFireflyRandomHSVState(HSVHelper, BaseState):
-    pass
-
-
 class GMFireflyHSVState(HSVHelper, BaseState):
     active = False
     c_cnt = 5
     c_cnt_done = 0
     c_state = 0
 
-    def __init__(self, status=0, h=52, s=255, v=255):
+    def __init__(self, status=0, h=52, s=255, v=255, multi=5000):
         self.h = h
         self.s = s
         self.v = 0
         self.v_max = v
         self.status = status
+        self.multi = multi
 
     def do_step(self):
         if self.active:
@@ -46,7 +43,7 @@ class GMFireflyHSVState(HSVHelper, BaseState):
                 self.c_cnt_done += 1
 
         else:
-            self.active = random.choice([True] + [False] * 5000)
+            self.active = random.choice([True] + [False] * self.multi)
             self.c_cnt = random.randint(3, 7)
 
     @staticmethod
@@ -54,6 +51,46 @@ class GMFireflyHSVState(HSVHelper, BaseState):
         hue = config['h']['cls']
         hvars = hue.validate(params.get('h'))
         return {"h": hvars, **params}
+
+class GMFireflyRandomHSVState(HSVHelper, BaseState):
+    active = False
+    c_cnt = 5
+    c_cnt_done = 0
+    c_state = 0
+
+    def __init__(self, status=0, h=[52], s=255, v=255, multi=5000):
+        self.h = h[0]
+        self.h_list = h
+        self.s = s
+        self.v = 0
+        self.v_max = v
+        self.status = status
+        self.multi = multi
+
+    def do_step(self):
+        if self.active:
+            if self.c_cnt_done >= self.c_cnt:
+                self.active = False
+                self.c_cnt_done = 0
+                return
+
+            if self.v == 0:
+                self.v = int(random.choice([self.v_max, self.v_max / 2, self.v_max / 3]))
+            else:
+                self.v = 0
+                self.c_cnt_done += 1
+
+        else:
+            self.active = random.choice([True] + [False] * self.multi)
+            self.h = random.choice(self.h_list)
+            self.c_cnt = random.randint(3, 7)
+
+    @staticmethod
+    def validate(config, params):
+        hue = config['h']['cls']
+        hvars = hue.validate(params.get('h'))
+        return {"h": hvars, **params}
+
 
 
 class GMFireflyRandomHSV(DefaultStep):
@@ -83,6 +120,12 @@ class GMFireflyRandomHSV(DefaultStep):
                 "cls": IntegerConfig(min=0, max=255, default=255),
                 "title": "Value",
                 "desc": "Value",
+                "comp": "SliderComponent"
+            },
+            "mutli": {
+                "cls": IntegerConfig(min=0, max=255, default=5000),
+                "title": "Multiplier",
+                "desc": "Multiplier, bigger means fewer bugchances",
                 "comp": "SliderComponent"
             },
         }
@@ -121,6 +164,12 @@ class FireflyHSV(DefaultStep):
                 "cls": IntegerConfig(min=0, max=255, default=255),
                 "title": "Value",
                 "desc": "Value",
+                "comp": "SliderComponent"
+            },
+            "mutli": {
+                "cls": IntegerConfig(min=0, max=255, default=5000),
+                "title": "Multiplier",
+                "desc": "Multiplier, bigger means fewer bugchances",
                 "comp": "SliderComponent"
             },
         }
