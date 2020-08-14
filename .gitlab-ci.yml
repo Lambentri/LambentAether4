@@ -4,6 +4,8 @@ image:
   name: gcr.io/kaniko-project/executor:debug
   entrypoint: [""]
 
+services:
+  - docker:dind
 
 before_script:
   - export DOCKER_HOST="tcp://localhost:2375"
@@ -23,7 +25,7 @@ build-master:
     
 build-master-arm64:
   stage: build
-  image: docker:dind
+  image: docker:git
   tags: 
     - aarch64
   script:
