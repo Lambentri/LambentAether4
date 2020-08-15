@@ -4,8 +4,8 @@ image:
   name: gcr.io/kaniko-project/executor:debug
   entrypoint: [""]
 
-services:
-  - docker:dind
+#services:
+#  - docker:dind
 
 before_script:
   - export DOCKER_HOST="unix:///var/run/docker.sock"
