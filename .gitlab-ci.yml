@@ -33,7 +33,7 @@ build-master-arm64:
     #- docker build --network host --pull  -t "$CI_REGISTRY_IMAGE" .
     #- docker push "$CI_REGISTRY_IMAGE"
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE
+    - /kaniko/executor --destination $CI_REGISTRY_IMAGE --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile 
 
   only:
     - master
