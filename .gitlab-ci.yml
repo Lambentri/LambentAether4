@@ -7,8 +7,8 @@ image:
 #services:
 #  - docker:dind
 
-before_script:
-  - export DOCKER_HOST="unix:///var/run/docker.sock"
+#before_script:
+#  - export DOCKER_HOST="unix:///var/run/docker.sock"
 #  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
 
 build-master:
