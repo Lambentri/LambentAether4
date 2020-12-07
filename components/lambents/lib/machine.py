@@ -180,7 +180,8 @@ class LambentMachine(DocMixin, ApplicationSession):
         "lambents.growth.GMFireflyRandomHSV",
     ]
 
-    brightness = BrightnessEnum(1)
+    brightness_tgt = BrightnessEnum(1)
+    brightness_act = 1
 
     def _handle_loading_config_from_file(self, path):
         try:
@@ -267,6 +268,19 @@ class LambentMachine(DocMixin, ApplicationSession):
         if not self.is_connected():
             print("TICK, not connected, passings")
             return
+        if enum == TickEnum.TENTHS and self.brightness_act != self.brightness_tgt.value:
+            if abs(self.brightness_tgt.value - self.brightness_act) < .3:
+                self.brightness_act = self.brightness_tgt.value
+            else:
+                fract = abs(self.brightness_tgt.value - self.brightness_act) / 10.
+                # avoid steps too big at the start however
+                if fract > .5:
+                    fract = fract/3
+                if self.brightness_act < self.brightness_tgt.value:
+                    self.brightness_act = self.brightness_act + fract
+                elif self.brightness_act > self.brightness_tgt.value:
+                    self.brightness_act = self.brightness_act - fract
+            print(self.brightness_act)
         # print(self.machines.values())
         operating_machines = filter(
             lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value,
@@ -274,10 +288,10 @@ class LambentMachine(DocMixin, ApplicationSession):
         # print(operating_machines)
         for mach in operating_machines:
             res = mach.step()
-            if self.brightness.value == 0:
+            if self.brightness_act == 0:
                 res = [0] * len(res)
-            elif self.brightness.value != 1:
-                res = [int(i/self.brightness.value) for i in res]
+            elif self.brightness_act != 1:
+                res = [int(i / self.brightness_act) for i in res]
 
             # print(mach.speed.value == TickEnum.TENS.value)
             # if mach.speed.value == TickEnum.TENS.value:
@@ -447,33 +461,33 @@ class LambentMachine(DocMixin, ApplicationSession):
 
     @inlineCallbacks
     def global_brightness_publish(self):
-        yield self.publish("com.lambentri.edge.la4.machine.gb", brightness=self.brightness.value)
+        yield self.publish("com.lambentri.edge.la4.machine.gb", brightness=self.brightness_tgt.value)
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.up")
     def global_brightness_value_up(self):
         """Move the global brightness up a single tick"""
-        self.brightness = self.brightness.next_up(self.brightness)
+        self.brightness_tgt = self.brightness_tgt.next_up(self.brightness_tgt)
         self.global_brightness_publish()
-        return {"brightness": self.brightness.value}
+        return {"brightness": self.brightness_tgt.value}
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.dn")
     def global_brightness_value_dn(self):
         """Move the global brightness down a single tick"""
-        self.brightness = self.brightness.next_dn(self.brightness)
+        self.brightness_tgt = self.brightness_tgt.next_dn(self.brightness_tgt)
         self.global_brightness_publish()
-        return {"brightness": self.brightness.value}
+        return {"brightness": self.brightness_tgt.value}
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.set")
     def global_brightness_value_set(self, value: int):
         """Set the global brightness"""
-        self.brightness = BrightnessEnum(value)
+        self.brightness_tgt = BrightnessEnum(value)
         self.global_brightness_publish()
-        return {"brightness": self.brightness.value}
+        return {"brightness": self.brightness_tgt.value}
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.get")
     def global_brightness_value_get(self):
         """get the global brightness"""
-        return {"brightness": self.brightness.value}
+        return {"brightness": self.brightness_tgt.value}
 
     @inlineCallbacks
     def onJoin(self, details):
