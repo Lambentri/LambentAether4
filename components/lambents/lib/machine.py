@@ -265,11 +265,18 @@ class LambentMachine(DocMixin, ApplicationSession):
     @inlineCallbacks
     def do_tick(self, enum: TickEnum):
         """A function that gets called hundreds of times per second. Depending on the TickEnum may emit stuff"""
+        # TODO rewrite this to use n/100 fractions instead of this *gestures*l insanity
         if not self.is_connected():
             print("TICK, not connected, passings")
             return
-        if enum == TickEnum.TENTHS and self.brightness_act != self.brightness_tgt.value:
-            if abs(self.brightness_tgt.value - self.brightness_act) < .3:
+        if enum == TickEnum.FHUNDREDTHS and self.brightness_act != self.brightness_tgt.value:
+            if self.brightness_tgt == BrightnessEnum.OFF:
+                if self.brightness_act > 40:
+                    self.brightness_act = 0
+                else:
+                    self.brightness_act += .15
+                print(self.brightness_act)
+            elif abs(self.brightness_tgt.value - self.brightness_act) < .3:
                 self.brightness_act = self.brightness_tgt.value
             else:
                 fract = abs(self.brightness_tgt.value - self.brightness_act) / 10.
