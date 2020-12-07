@@ -273,14 +273,13 @@ class LambentMachine(DocMixin, ApplicationSession):
                 self.brightness_act = self.brightness_tgt.value
             else:
                 fract = abs(self.brightness_tgt.value - self.brightness_act) / 10.
-                # avoid steps too big at the start however
+                # avoid steps too big at the start however, fades may need more tuning of the divisor values
                 if fract > .5:
                     fract = fract/3
                 if self.brightness_act < self.brightness_tgt.value:
                     self.brightness_act = self.brightness_act + fract
                 elif self.brightness_act > self.brightness_tgt.value:
                     self.brightness_act = self.brightness_act - fract
-            print(self.brightness_act)
         # print(self.machines.values())
         operating_machines = filter(
             lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value,
