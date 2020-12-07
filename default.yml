@@ -135,6 +135,14 @@ machines:
     cls: "BounceScape"
     kwargs: {h:[245,10]}
 
+  - name: BouncyFire
+    cls: "BounceScape"
+    kwargs: {h:[250,30]}
+
+  - name: BouncyVapor
+    cls: "BounceScape"
+    kwargs: {h:[150,220]}
+
   - name: SRVaporWave
     cls: "SolidRocker"
     kwargs: {"h":[136,245]}
@@ -199,5 +207,24 @@ machines:
     cls: "GMFireflyRandomHSV"
     kwargs: {"h":[52, 15, 140], "multi":100}
 
+  - name: FlagChaseEU
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: {"colors": ["CF142B", "FFFFFF", "21468B"]}
+
+  - name: FlagChaseAFR
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: { "colors": [ "d01c1f", "00a95c", "ffd700" ] }
+
+  - name: FlagChaseIND
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: { "colors": [ "FF9933", "FFFFFF", "138808" ] }
+
+  - name: FlagChase☭
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: { "colors": [ "DA251D", "FFCD00"] }
+
+  - name: FlagChaseRW
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: { "colors": [ "d52b1e", "FFFFFF"] }
 #links:
 #  autoform: true

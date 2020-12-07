@@ -1,7 +1,7 @@
 import colorsys
 
 
-class HSVHelper(object):
+class HSVHelper:
 
     def _sys_255_to_1(self, values):
         return [i / 255.0 for i in values]
@@ -47,3 +47,6 @@ class HSVHelperFull(HSVHelper):
         self.v_t = v
 
 
+class HexHelper:
+    def _hex_to_rgb(self, value):
+        return tuple([int(value[i:i + 2], 16) for i in range(0, len(value), 2)])

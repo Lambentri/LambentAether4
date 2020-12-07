@@ -1,6 +1,6 @@
 from itertools import chain
 
-from components.lambents.lib.color import HSVHelper
+from components.lambents.lib.color import HSVHelper, HexHelper
 from components.lambents.lib.config import IntegerConfig, TupleConfig, ArrayConfig
 from components.lambents.lib.machine import TickEnum, RunningEnum
 from components.lambents.lib.steps import DefaultStep
@@ -110,6 +110,32 @@ class MultiNoSpaceChaseState(HSVHelper, BaseState):
         hue = config['h']['cls']
         hvars = hue.validate(params.get('h'))
         return {"h": hvars, **params}
+
+
+class MultiNoSpaceChaseStateRGB(HexHelper, BaseState):
+    def __init__(self, colors, spacing=30, status=0):
+        self.colors = colors
+        self.lcolors = len(colors)
+
+        self.spacing = spacing
+        self.status = status
+
+        self.statusvals = list(chain.from_iterable([[x for i in range(self.spacing)] for x in self.colors]))
+
+    def color_from_status(self):
+        self.c = self.statusvals[self.status]
+
+    def do_step(self):
+        self.status = (self.status + 1) % (self.spacing * self.lcolors)
+        self.color_from_status()
+
+    def read_rgb(self):
+        r, g, b = self._hex_to_rgb(self.c)
+        return [int(r), int(g), int(b)]
+
+    @staticmethod
+    def validate(config, params):
+        return {**params}
 
 
 class SimpleColorChaser(DefaultStep):
@@ -239,3 +265,28 @@ class MultiNoSpaceChaser(DefaultStep):
             },
         }
 #
+
+class MultiNoSpaceChaserRGB(DefaultStep):
+    desc = "multi color that chases itself with no spaces w/ RGB invocation"
+    grps = ['chase', 'solids', 'multi', 'nospace']
+    name = "Multi CC RGB"
+    speed = TickEnum.TENTHS
+    running = RunningEnum.RUNNING
+
+    class meta:
+        state = MultiNoSpaceChaseStateRGB
+        state_status = True
+        config = {
+            "colors": {
+                "cls": ArrayConfig(max_count=8, default=0, of_type=str),
+                "title": "Colors",
+                "desc": "Hue",
+                "comp": "SliderComponent"
+            },
+            "spacing": {
+                "cls": IntegerConfig(min=0, max=360, default=30),
+                "title": "Spacing",
+                "desc": "How far between chasers",
+                "comp": "SliderComponent"
+            },
+        }

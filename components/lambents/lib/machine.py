@@ -1,12 +1,15 @@
 import argparse
 import importlib
+import itertools
+import os
 import pydoc
+import random
+import txaio
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn import wamp
 from enum import Enum
-import os
-import txaio
+
 from autobahn.wamp import RegisterOptions
 from autobahn.wamp.types import PublishOptions
 from marshmallow import fields
@@ -18,6 +21,7 @@ from yaml import load, Loader, YAMLError
 
 from components.lambents.lib.decor import docupub
 from components.lambents.lib.mixins import DocMixin
+from components.library import chunks
 
 
 class TickEnum(Enum):
@@ -167,6 +171,7 @@ class LambentMachine(DocMixin, ApplicationSession):
         "lambents.chasers.SimpleColorChaser",
         "lambents.chasers.MultiColorChaser",
         "lambents.chasers.MultiNoSpaceChaser",
+        "lambents.chasers.MultiNoSpaceChaserRGB",
         "lambents.rainbows.RainbowChaser",
         "lambents.scapes.BounceScape",
         "lambents.rocker.SolidRocker",
@@ -283,6 +288,11 @@ class LambentMachine(DocMixin, ApplicationSession):
             #     # yield self.publish(f"com.lambentri.edge.la4.machine.link.srx.{mach.id}", res)
             #     # yield self.publish(f"com.lambentri.edge.la4.device.82667777.esp_0602a5", res)
             # print(res[0:12])
+
+            # sparkle publishy test
+            # chunked = chunks(res, 3)
+            # res = list(itertools.chain.from_iterable([[int(v*random.choice([.20, .40, .60, .80, 1.00]))  for v in i] for i in chunked]))
+
             options = PublishOptions(retain=True)
             yield self.publish(f"com.lambentri.edge.la4.machine.link.src.{mach.id}", res, id=mach.id, options=options)
 
@@ -435,30 +445,35 @@ class LambentMachine(DocMixin, ApplicationSession):
             {"machines": self.machines, "speed_enum": {k: v.value for k, v in TickEnum.__members__.items()}})
         return serialized.data
 
+    @inlineCallbacks
+    def global_brightness_publish(self):
+        yield self.publish("com.lambentri.edge.la4.machine.gb", brightness=self.brightness.value)
+
     @wamp.register("com.lambentri.edge.la4.machine.gb.up")
     def global_brightness_value_up(self):
         """Move the global brightness up a single tick"""
-        print("uppe")
         self.brightness = self.brightness.next_up(self.brightness)
-        print(self.brightness)
+        self.global_brightness_publish()
         return {"brightness": self.brightness.value}
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.dn")
     def global_brightness_value_dn(self):
         """Move the global brightness down a single tick"""
-        print("downe")
         self.brightness = self.brightness.next_dn(self.brightness)
-        print(self.brightness)
+        self.global_brightness_publish()
         return {"brightness": self.brightness.value}
 
     @wamp.register("com.lambentri.edge.la4.machine.gb.set")
     def global_brightness_value_set(self, value: int):
         """Set the global brightness"""
-        print("globo")
         self.brightness = BrightnessEnum(value)
-
+        self.global_brightness_publish()
         return {"brightness": self.brightness.value}
 
+    @wamp.register("com.lambentri.edge.la4.machine.gb.get")
+    def global_brightness_value_get(self):
+        """get the global brightness"""
+        return {"brightness": self.brightness.value}
 
     @inlineCallbacks
     def onJoin(self, details):
