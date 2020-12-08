@@ -137,7 +137,7 @@ machines:
 
   - name: BouncyFire
     cls: "BounceScape"
-    kwargs: {h:[250,30]}
+    kwargs: {h:[250,20], v: 128}
 
   - name: BouncyVapor
     cls: "BounceScape"

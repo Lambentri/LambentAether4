@@ -64,11 +64,13 @@ class RunningEnum(Enum):
 
 
 class BrightnessEnum(Enum):
-    FULL = 1
-    HALF = 2
-    QUARTER = 4
-    PCT_TEN = 10
-    PCT_FIVE = 20
+    FULL = 255
+    HALF = 127
+    QUARTER = 63
+    EIGHTH = 31
+    SIXTEENTH = 15
+    THIRTY2ND = 7
+    SIXTYFOURTH = 3
     OFF = 0
 
     def _get_index(self, value):
@@ -180,8 +182,8 @@ class LambentMachine(DocMixin, ApplicationSession):
         "lambents.growth.GMFireflyRandomHSV",
     ]
 
-    brightness_tgt = BrightnessEnum(1)
-    brightness_act = 1
+    brightness_tgt = BrightnessEnum(255)
+    brightness_act = 255
 
     def _handle_loading_config_from_file(self, path):
         try:
@@ -265,28 +267,31 @@ class LambentMachine(DocMixin, ApplicationSession):
     @inlineCallbacks
     def do_tick(self, enum: TickEnum):
         """A function that gets called hundreds of times per second. Depending on the TickEnum may emit stuff"""
-        # TODO rewrite this to use n/100 fractions instead of this *gestures*l insanity
+        # TODO rewrite this to use n/100 fractions instead of this *gestures* insanity
         if not self.is_connected():
             print("TICK, not connected, passings")
             return
         if enum == TickEnum.FHUNDREDTHS and self.brightness_act != self.brightness_tgt.value:
-            if self.brightness_tgt == BrightnessEnum.OFF:
-                if self.brightness_act > 40:
-                    self.brightness_act = 0
-                else:
-                    self.brightness_act += .15
-                print(self.brightness_act)
-            elif abs(self.brightness_tgt.value - self.brightness_act) < .3:
-                self.brightness_act = self.brightness_tgt.value
+            # if self.brightness_tgt == BrightnessEnum.OFF:
+            #     if self.brightness_act > 40:
+            #         self.brightness_act = 0
+            #     else:
+            #         self.brightness_act += .15
+            # elif abs(self.brightness_tgt.value - self.brightness_act) < .3:
+            #     self.brightness_act = self.brightness_tgt.value
+            # else:
+            #     fract = abs(self.brightness_tgt.value - self.brightness_act) / 10.
+            #     # avoid steps too big at the start however, fades may need more tuning of the divisor values
+            #     if fract > .5:
+            #         fract = fract/3
+            #     if self.brightness_act < self.brightness_tgt.value:
+            #         self.brightness_act = self.brightness_act + fract
+            #     elif self.brightness_act > self.brightness_tgt.value:
+            #         self.brightness_act = self.brightness_act - fract
+            if self.brightness_act < self.brightness_tgt.value:
+                self.brightness_act +=1
             else:
-                fract = abs(self.brightness_tgt.value - self.brightness_act) / 10.
-                # avoid steps too big at the start however, fades may need more tuning of the divisor values
-                if fract > .5:
-                    fract = fract/3
-                if self.brightness_act < self.brightness_tgt.value:
-                    self.brightness_act = self.brightness_act + fract
-                elif self.brightness_act > self.brightness_tgt.value:
-                    self.brightness_act = self.brightness_act - fract
+                self.brightness_act -= 1
         # print(self.machines.values())
         operating_machines = filter(
             lambda x: x.speed.value == enum.value and x.running.value == RunningEnum.RUNNING.value,
@@ -296,8 +301,8 @@ class LambentMachine(DocMixin, ApplicationSession):
             res = mach.step()
             if self.brightness_act == 0:
                 res = [0] * len(res)
-            elif self.brightness_act != 1:
-                res = [int(i / self.brightness_act) for i in res]
+            elif self.brightness_act != 255:
+                res = [int(i * self.brightness_act / 255.) for i in res]
 
             # print(mach.speed.value == TickEnum.TENS.value)
             # if mach.speed.value == TickEnum.TENS.value:
