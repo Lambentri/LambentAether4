@@ -12,7 +12,7 @@ TODO
 
 ## Documentation Snapshot
 
-![Image of Yaktocat](Screenshot_Docs_20201212.png)
+![Image of Snapshot](Screenshot_Docs_20201212.png)
 
 # Deployment
 
