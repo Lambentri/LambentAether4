@@ -1,3 +1,15 @@
+# Lambent Aether 4
+
+[![Gitter](https://badges.gitter.im/Lambentri/community.svg)](https://gitter.im/Lambentri/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+## Motivations
+
+A lighting server composed of on the fly configurable state machines, routing elements, and virtual hardware devices
+
+## Features
+
+TODO
+
 # Deployment
 
 
