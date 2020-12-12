@@ -10,8 +10,11 @@ A lighting server composed of on the fly configurable state machines, routing el
 
 TODO
 
-# Deployment
+## Documentation Snapshot
 
+![Image of Yaktocat](Screenshot_Docs_20201212.png)
+
+# Deployment
 
 ## Kube
 
