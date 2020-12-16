@@ -42,11 +42,13 @@ services:
     working_dir: /node/components
     restart: on-failure
     network_mode: "host"
+    depends_on:
+      - helper
+      - redis
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws
       - LA4_REDIS=redis
-      - LA4_SCAN_IFACE_LIMIT=wlp3s0
     extra_hosts:
       - "xbar:127.0.0.1"
       - "redis:127.0.0.1"
@@ -61,6 +63,7 @@ services:
     network_mode: "host"
     depends_on:
       - xbar
+      - scan_8266
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws

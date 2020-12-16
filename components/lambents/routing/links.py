@@ -112,7 +112,7 @@ class LinkManager(DocMixin, ApplicationSession):
             for k, v in objects.items():
                 vname = v['name']
                 returnvals.append({
-                    "listname": f"{groupkey}.{vname}",
+                    "list_name": f"{groupkey}.{vname}",
                     "grp": groupkey,
                     **v
                 })
@@ -136,7 +136,7 @@ class LinkManager(DocMixin, ApplicationSession):
             last_seen = self.sources_lseen[f"{src}.{topic}"]
             how_long = datetime.datetime.now() - last_seen
             how_long_s = self._how_long_to_repr(how_long)
-            built_srcs.append({"listname": topic, "ttl": how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
+            built_srcs.append({"list_name": topic, "ttl": how_long_s, "id": f"{LINK_PREFIX}.{src}.{topic}", "cls": src})
 
         built_links = {k: v.serialize() for k, v in self.links.items()}
 
@@ -326,7 +326,7 @@ class LinkManager(DocMixin, ApplicationSession):
 
     @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.links.save")
-    def save_link(self, link_name, link_spec):
+    def save_link(self, link_name: str, link_spec):
         """ Create, save, and modify. All in one!
 
         We're going to be super lazy and assume the name engine won't collide too hard
@@ -334,7 +334,7 @@ class LinkManager(DocMixin, ApplicationSession):
         # print(link_name)
         # print(link_spec)
 
-        list_name = link_spec['source']['listname']
+        list_name = link_spec['source']['list_name']
         target_id = link_spec['target']['id']
         source_id = link_spec['source']['id']
         self.links[link_name] = Link(name=link_name, active=True, list_name=list_name, full_spec=link_spec)
@@ -349,7 +349,16 @@ class LinkManager(DocMixin, ApplicationSession):
         # self.links[link_name] = Link(name=link_name, active=True, list_name=list_name, full_spec=link_spec)
         # self.links[link_name] = {"name": link_name, "active": True, "list_name": list_name, "full_spec": link_spec}
 
+    @inlineCallbacks
+    @wamp.register("com.lambentri.edge.la4.links.save_bulk")
+    def save_bulk_links(self, link_name, link_spec):
+        print("bulky")
+        for link in link_spec['targets']:
+            name = link['name']
+            newname = link_name + "·" + name
 
+            newspec = {"source": link_spec['source'], "target": link}
+            yield self.save_link(newname, newspec)
 
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name: str):
@@ -375,6 +384,7 @@ class LinkManager(DocMixin, ApplicationSession):
         del self.link_subs[link_name]
         del self.link_tgt_map[link_name]
         del self.links[link_name]
+        del self.link_name_to_source[link_name]
 
 
 if __name__ == '__main__':

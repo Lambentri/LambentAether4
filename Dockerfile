@@ -1,4 +1,4 @@
-FROM amd64/pypy:3.6-slim
+FROM amd64/pypy:3.7-slim
 
 MAINTAINER The Crossbar.io Project <support@crossbario.com>
 
@@ -73,6 +73,7 @@ EXPOSE 8080 8000
 # everything below is custom
 
 COPY requirements.txt /node
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /node
 RUN ls -la /node/.crossbar
