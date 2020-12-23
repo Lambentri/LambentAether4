@@ -162,7 +162,6 @@ class ScanSession(DocMixin, ApplicationSession):
 
     # udp methods
     def udp_send(self, message, details, id=None):
-        # print(details)
         name = details.topic.rsplit('.', 1)[1]
         if name.isdigit():
             name = ".".join(details.topic.rsplit('.', 4)[1:])
@@ -236,9 +235,9 @@ class ScanSession(DocMixin, ApplicationSession):
         result = sock_tcp.connect_ex((ip, 80))
         if result == 0:
             sock_tcp.close()
-
             if os.system(f'nc -vnzu {ip} 7777') == 0:
-                return ip
+                if os.system(f'nc -vnzu {ip} 7878') == 0:
+                    return ip
 
         sock_tcp.close()
 
