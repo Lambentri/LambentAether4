@@ -76,7 +76,6 @@ COPY requirements.txt /node
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /node
-RUN ls -la /node/.crossbar
 
 USER root
 RUN chown -R crossbar:crossbar /node/*

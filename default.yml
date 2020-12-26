@@ -226,5 +226,13 @@ machines:
   - name: FlagChaseRW
     cls: "MultiNoSpaceChaserRGB"
     kwargs: { "colors": [ "d52b1e", "FFFFFF"] }
+
+  - name: XmasChaserRG
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: { "colors": [ "14DD14", "000000", "DD1414", "000000"], spacing: 1 }
+
+  - name: XmasChaserRGBY
+    cls: "MultiNoSpaceChaserRGB"
+    kwargs: { "colors": [ "05878a", "074e67", "67074e", "dd9933"], spacing: 1 }
 #links:
 #  autoform: true

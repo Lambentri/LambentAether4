@@ -20,6 +20,10 @@ build-master:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE
 
+    - echo "{\"auths\":{\"$CI_REGISTRY_DH\":{\"username\":\"$CI_REGISTRY_USER_DH\",\"password\":\"$CI_REGISTRY_PASSWORD_DH\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE_DH
+
+
   only:
     - master
     
