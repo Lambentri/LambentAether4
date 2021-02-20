@@ -6,7 +6,7 @@ class DefaultStep(object):
     iname = None
     class meta:
         state = None
-    def __init__(self, config_params, led_count: int=256, set_status=False):
+    def __init__(self, config_params, led_count: int=257, set_status=False):
         state = self.meta.state
         kwargs = state.validate(self.meta.config, config_params)
         if not set_status:

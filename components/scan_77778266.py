@@ -15,7 +15,7 @@ import txredisapi as redis
 from autobahn import wamp
 from autobahn.twisted import ApplicationSession
 from autobahn.twisted.wamp import ApplicationRunner
-from autobahn.wamp import SubscribeOptions
+from autobahn.wamp import SubscribeOptions, TransportLost
 from dataclasses import dataclass
 from twisted.internet import task, threads, reactor
 from twisted.internet.defer import inlineCallbacks
@@ -33,6 +33,7 @@ class BPP(Enum):
     RGBCW = "RGBCW"
     RGBNW = "RGBNW"
     RGBAW = "RGBAW"
+    RGBXW = "RGBXW"
 
 
 @dataclass
@@ -89,7 +90,7 @@ class ScanSession(DocMixin, ApplicationSession):
         if os.environ.get('LA4_REDIS'):
             print("Yay a redis")
             self.redis = yield redis.Connection(os.environ.get("LA4_REDIS"), 6379, 13)
-            print(self.redis.Methods)
+            # print(self.redis.Methods)
             self.ticker_name_writer = task.LoopingCall(self.write_names)
             self.ticker_name_writer.start(self.WRITE_TICKS)
         print("setup")
@@ -111,7 +112,14 @@ class ScanSession(DocMixin, ApplicationSession):
                           "name": v.nname or v.name,
                           "bpp": v.bpp.value
                           })
-        yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
+        try:
+            yield self.publish("com.lambentri.edge.la4.machine.sink.8266-7777", res=built)
+        except TransportLost: # handle this case smoothly and exit
+            self.disconnect()
+
+    @wamp.register("com.lambentri.edge.la4.device.82667777.rescan")
+    def rescan(self):
+        self.setup_device_scan()
 
     @wamp.register("com.lambentri.edge.la4.zeroconf.8266")
     def get_list(self):
@@ -144,11 +152,24 @@ class ScanSession(DocMixin, ApplicationSession):
 
         self.current_items[shortname].paused = False
 
+    @wamp.register("com.lambentri.edge.la4.device.82667777.pokes")
+    def poke_subtle(self, shortname: str):
+        print("subtlepoke")
+        values_list = [(20, 10, 0)]
+        self.current_items[shortname].paused = True
+        for value in values_list:
+            for i in range(0, 10000):  # tick it
+                values = value * 300  # 300 leds of test
+                structd = struct.pack('B' * len(values), *values)
+                self.socket.sendto(structd, (self.current_items[shortname].address, self.PORT))
+
+        self.current_items[shortname].paused = False
+
     def _ww_from_rgb(self, r, g, b):
         pass
 
     def _w_from_rgb(self, r, g, b, coef=2):
-        return min(r,g,b)/coef
+        return int(min(r,g,b)/coef)
 
     def _a_from_rgb(self, r, g, b):
         w = self._w_from_rgb(r, g, b)
@@ -156,7 +177,7 @@ class ScanSession(DocMixin, ApplicationSession):
         if (a > (g - w) * 2):
             a = (g - w) * 2
 
-        return a
+        return int(a)
 
 
 
@@ -174,13 +195,15 @@ class ScanSession(DocMixin, ApplicationSession):
         elif self.current_items[id].bpp == BPP.RGB:
             filtered = [[rgbv[1], rgbv[0], rgbv[2]] for rgbv in chunked]
         elif self.current_items[id].bpp == BPP.RGBWW:
-            pass
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], min(self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2]), rgbv[1])] for rgbv in chunked]
         elif self.current_items[id].bpp == BPP.RGBNW:
             filtered = [[rgbv[1], rgbv[0], rgbv[2], self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
         elif self.current_items[id].bpp == BPP.RGBCW:
-            filtered = [[rgbv[1], rgbv[0], rgbv[2], self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], min(self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2]),rgbv[2])] for rgbv in chunked]
         elif self.current_items[id].bpp == BPP.RGBAW:
             filtered = [[rgbv[1], rgbv[0], rgbv[2], self._a_from_rgb(rgbv[1], rgbv[0], rgbv[2]), self._w_from_rgb(rgbv[1], rgbv[0], rgbv[2])] for rgbv in chunked]
+        elif self.current_items[id].bpp == BPP.RGBXW: # blanked white pixel
+            filtered = [[rgbv[1], rgbv[0], rgbv[2], 0] for rgbv in chunked]
 
         values = list(itertools.chain.from_iterable(filtered))
         structd = struct.pack('B' * len(values), *values)
@@ -188,7 +211,6 @@ class ScanSession(DocMixin, ApplicationSession):
             self.socket.sendto(structd, (self.current_items[name].address, self.PORT))
 
     def err_device_scan(self, *args, **kwargs):
-        pass
         print("err")
         print(args)
 
@@ -270,6 +292,7 @@ class ScanSession(DocMixin, ApplicationSession):
     def get_name_for_key(self, key):
         print(f"loading redis 4 {key}")
         val = yield self.redis.get(f"LA4_DEVICE_NAME_{key}")
+        print(f"found {val}")
         return val
 
     def write_names(self):
@@ -284,4 +307,4 @@ if __name__ == '__main__':
     url = os.environ.get("XBAR_ROUTER", u"ws://127.0.0.1:8083/ws")
     realm = u"realm1"
     runner = ApplicationRunner(url, realm)
-    runner.run(ScanSession, auto_reconnect=True)
+    runner.run(ScanSession)

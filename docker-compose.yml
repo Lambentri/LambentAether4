@@ -4,8 +4,8 @@ services:
   xbar:
     build: .
     network_mode: "host"
-    ports:
-      - "8083:8083"
+#    ports:
+#      - "8083:8083"
     working_dir: /node/
     entrypoint: crossbar start --cbdir /node/.crossbar --config /node/.crossbar/config.json
 
@@ -15,12 +15,12 @@ services:
     network_mode: "host"
     expose:
       - 6379
-    ports:
-      - "6379:6379"
+#    ports:
+#      - "6379:6379"
     extra_hosts:
       - "xbar:127.0.0.1"
     volumes:
-    - ./data:/data
+    - ./data:/data,
 
   helper:
     build: .
@@ -48,7 +48,7 @@ services:
     environment:
       - PYTHONPATH=/node
       - XBAR_ROUTER=ws://xbar:8083/ws
-      - LA4_REDIS=redis
+      - LA4_REDIS=127.0.0.1
     extra_hosts:
       - "xbar:127.0.0.1"
       - "redis:127.0.0.1"

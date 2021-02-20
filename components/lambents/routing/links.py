@@ -216,7 +216,10 @@ class LinkManager(DocMixin, ApplicationSession):
             print("EQUALIZED OR TIMED OUT")
             del self.iter_buffer_intermediate[target]
             self.links[enable].active = True
-            self.iter_buffer_loop_storage[target].stop()
+            try:
+                self.iter_buffer_loop_storage[target].stop()
+            except AssertionError:
+                print("Tried to stop a LoopingCall that was not running.")
         # when loop is complete
         # delete iter_buffer
         # enable excluded
@@ -352,7 +355,6 @@ class LinkManager(DocMixin, ApplicationSession):
     @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.links.save_bulk")
     def save_bulk_links(self, link_name, link_spec):
-        print("bulky")
         for link in link_spec['targets']:
             name = link['name']
             newname = link_name + "·" + name
@@ -363,28 +365,42 @@ class LinkManager(DocMixin, ApplicationSession):
     @wamp.register("com.lambentri.edge.la4.links.toggle")
     def toggle_link(self, link_name: str):
         """Toggles a link on, will disable all others that are pointing to a given device / src"""
-        print("TOGGLE")
-        print(link_name)
         target = self.link_tgt_map[link_name]
         self._do_toggle(target, exclude=link_name)
 
     @wamp.register("com.lambentri.edge.la4.links.disable")
     def disable_link(self, link_name: str):
         """Disables a link (more or less the same as toggling, but to turn off the lights?"""
-        print("DISABLE")
         self._do_disable(link_name)
 
+    @inlineCallbacks
     @wamp.register("com.lambentri.edge.la4.links.destroy")
     def destroy_link(self, link_name: str):
         """Destroys a link by removing it from the link struct"""
         list_name = self.links[link_name].name
-        print(list_name)
-        print(link_name)
-        self.link_subs[link_name].unsubscribe()
+        yield self.link_subs[link_name].unsubscribe()
         del self.link_subs[link_name]
         del self.link_tgt_map[link_name]
         del self.links[link_name]
         del self.link_name_to_source[link_name]
+
+    @inlineCallbacks
+    @wamp.register("com.lambentri.edge.la4.links.destroy_prefix")
+    def destroy_prefix(self, prefix: str):
+        """For destroying bulk link created w/ "$name·location" """
+        deletable = filter(lambda x: x.startswith(prefix), self.link_subs.keys())
+        for item in deletable:
+            yield self.destroy_link(item)
+
+    @inlineCallbacks
+    @wamp.register("com.lambentri.edge.la4.links.destroy_all")
+    def destroy_all(self):
+        """ Destroy ALL Links """
+        # raises builtins.RuntimeError: dictionary changed size during iteration
+        link_name_list = list(self.link_subs.keys())
+        for link_name in link_name_list:
+            yield self.destroy_link(link_name)
+
 
 
 if __name__ == '__main__':
