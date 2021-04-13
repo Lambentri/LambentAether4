@@ -35,7 +35,7 @@ build-master-arm64:
     - aarch64
   script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker build --network host --pull  -t "$CI_REGISTRY_IMAGE" -f Dockerfile.arm64
+    - docker build --network host --pull  -t "$CI_REGISTRY_IMAGE" -f Dockerfile.arm64 .
     - docker push "$CI_REGISTRY_IMAGE"
 #    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
 #    - echo $CI_PROJECT_DIR
