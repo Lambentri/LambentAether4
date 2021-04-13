@@ -29,17 +29,18 @@ build-master:
     
 build-master-arm64:
   stage: build
-  image: gcr.io/kaniko-project/executor:debug
-  tags: 
+#  image: gcr.io/kaniko-project/executor:debug
+  image: docker:19.03.0
+  tags:
     - aarch64
   script:
-    #- docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    #- docker build --network host --pull  -t "$CI_REGISTRY_IMAGE" .
-    #- docker push "$CI_REGISTRY_IMAGE"
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - echo $CI_PROJECT_DIR
-    - echo $CI_REGISTRY_IMAGE
-    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker build --network host --pull  -t "$CI_REGISTRY_IMAGE" -f Dockerfile.arm64
+    - docker push "$CI_REGISTRY_IMAGE"
+#    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+#    - echo $CI_PROJECT_DIR
+#    - echo $CI_REGISTRY_IMAGE
+#    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE
 
   only:
     - master

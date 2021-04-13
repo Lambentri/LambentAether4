@@ -1,4 +1,4 @@
-FROM crossbario/crossbar:pypy-amd64
+FROM crossbario/crossbar:pypy-arm64v8
 
 USER root
 RUN apt-get update && apt-get install -y rustc cargo netcat && rm -rf ~/.cache && rm -rf /var/lib/apt/lists/*
