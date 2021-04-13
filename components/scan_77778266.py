@@ -299,7 +299,13 @@ class ScanSession(DocMixin, ApplicationSession):
         print("writin redis")
         for k, i in self.current_items.items():
             if i.nname:
-                self.redis.set(f"LA4_DEVICE_NAME_{k}", i.nname)
+                try:
+                    self.redis.set(f"LA4_DEVICE_NAME_{k}", i.nname)
+                except redis.ConnectionError as e:
+                    print(e)
+                    import sys; sys.exit(0)
+                except Exception as e:
+                    print(e)
 
 
 
