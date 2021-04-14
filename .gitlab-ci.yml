@@ -39,7 +39,7 @@ build-master-arm64:
     # dh
     - docker login -u "$CI_REGISTRY_USER_DH" -p "$CI_REGISTRY_PASSWORD_DH" $CI_REGISTRY_DH
     - docker build --network host --pull  -t "$CI_REGISTRY_IMAGE_DH" -f Dockerfile.arm64 .
-    - docker push "$CI_REGISTRY_IMAGE_DH"
+    - docker push "$CI_REGISTRY_IMAGE_DH:latest-arm64"
 
   #    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
 #    - echo $CI_PROJECT_DIR
