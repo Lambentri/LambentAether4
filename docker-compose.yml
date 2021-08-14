@@ -52,8 +52,8 @@ services:
     extra_hosts:
       - "xbar:127.0.0.1"
       - "redis:127.0.0.1"
-    sysctls:
-      - net.ipv4.ip_forward=1
+#    sysctls:
+#      - net.ipv4.ip_forward=1
 
   machine:
     build: .
